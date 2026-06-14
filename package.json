@@ -1,0 +1,22 @@
+{
+  "name": "enjoy-cpbl",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.7",
+    "dotenv": "^17.4.2",
+    "puppeteer": "^25.1.0",
+    "vite": "^8.0.12"
+  },
+  "dependencies": {
+    "firebase": "^12.14.0",
+    "jsdom": "^29.1.1",
+    "vue": "^3.5.38"
+  }
+}
