@@ -139,7 +139,7 @@ import ThemeDayModal from './components/ThemeDayModal.vue';
 import TicketScheduleModal from './components/TicketScheduleModal.vue';
 import ScrapeProgressModal from './components/ScrapeProgressModal.vue';
 
-import { onAuthChange, signOutUser, getSchedules, saveSchedules, getCheerleaders, saveCheerleaders, getLastSync, setLastSync, getUserMarks, getUserProfile, getGroupMarks, setUserMark, getTicketSchedules, getThemeDays } from './firebase.js';
+import { onAuthChange, signOutUser, getSchedules, saveSchedules, getAllCheerleaders, saveCheerleaders, getLastSync, setLastSync, getUserMarks, getUserProfile, getGroupMarks, setUserMark, getTicketSchedules, getThemeDays } from './firebase.js';
 import * as scraperModule from './utils/scraper.js';
 import { computed } from 'vue';
 
@@ -199,8 +199,7 @@ onMounted(async () => {
   });
 
   await loadTicketRules();
-  await loadScheduleData();
-  await checkAutoSync();
+  await loadScheduleData();  
 });
 
 async function loadTicketRules() {
@@ -224,11 +223,7 @@ async function loadScheduleData() {
     
     scheduleData.value = data;
 
-    const allCheers = {};
-    for (const gameId of Object.keys(scheduleData.value)) {
-      const cheers = await getCheerleaders(gameId);
-      if (cheers) allCheers[gameId] = cheers;
-    }
+    const allCheers = await getAllCheerleaders() || {};
     cheerleaderData.value = allCheers;
     isMounted.value = true;
   } catch (e) {
@@ -348,7 +343,7 @@ async function startScrapeCheerleaders() {
   isScrapeDone.value = false;
   
   try {
-    const fbModule = { getSchedules, getCheerleaders, saveCheerleaders, getLastSync, setLastSync };
+    const fbModule = { getSchedules, saveCheerleaders, getLastSync, setLastSync };
     const options = {
       onProgress: (info) => {
         scrapeProgress.value = info;

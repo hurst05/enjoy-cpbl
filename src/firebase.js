@@ -72,8 +72,9 @@ export async function saveTicketScheduleSpecific(gameId, rules) {
   await set(ref(db, `ticketSchedules/gameSpecific/${gameId}`), rules);
 }
 
-export async function getCheerleaders(gameId) {
-  const snapshot = await get(ref(db, `cheerleaders/${gameId}`));
+
+export async function getAllCheerleaders() {
+  const snapshot = await get(ref(db, 'cheerleaders'));
   return snapshot.val();
 }
 
