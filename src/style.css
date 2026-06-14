@@ -708,25 +708,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   font-weight: 900;
   color: var(--text-primary);
   flex-wrap: nowrap;
   white-space: nowrap;
   overflow: hidden;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-style: italic;
 }
 
 .team-name-short {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 900;
 }
 
 .team-logo {
-  height: 28px;
+  height: 24px;
   width: auto;
-  max-width: 36px;
+  max-width: 30px;
   object-fit: contain;
 }
 
@@ -735,41 +735,46 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  line-height: 1.2;
+  line-height: 1.1;
   margin: 0 4px;
 }
 
 .game-time {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .game-location {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .game-theme-day {
-  font-size: 0.6rem;
-  color: var(--accent-lavender);
-  font-weight: 600;
-  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #fff;
+  background: var(--accent-lavender);
+  font-weight: 800;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 95%;
+  box-shadow: 0 2px 4px rgba(177, 151, 252, 0.3);
 }
 
 .game-icons {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 3px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .game-mark-icon {
-  font-size: 0.65rem;
+  font-size: 0.9rem;
 }
 
 /* ===== Tooltip ===== */
@@ -780,7 +785,7 @@ body {
 }
 
 .tooltip-trigger {
-  font-size: 0.65rem;
+  font-size: 0.9rem;
   opacity: 0.6;
   transition: opacity 0.15s;
 }

@@ -8,23 +8,22 @@
             <div class="modal-team">
               <div class="modal-team-circle" :style="{ background: awayTeam.color, color: awayTeam.textColor || '#fff' }">
                 {{ awayTeam.short || awayTeam.name }}
-              </div>
-              <span class="modal-team-label">客隊</span>
+              </div>              
+            </div>            
+            <div class="modal-center-info" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+              <div class="modal-game-number" v-if="game.gameNumber" style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">⚾ 場次：{{ game.gameNumber }}</div>
+              <div class="modal-location" style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap;">📍 {{ game.location || '場地未定' }}</div>
             </div>
-            <div class="modal-vs">VS</div>
             <div class="modal-team">
               <div class="modal-team-circle" :style="{ background: homeTeam.color, color: homeTeam.textColor || '#fff' }">
                 {{ homeTeam.short || homeTeam.name }}
-              </div>
-              <span class="modal-team-label">主場</span>
+              </div>              
             </div>
           </div>
           <div class="modal-game-info">
-            <div class="modal-date">📅 {{ game.date }} {{ game.dayOfWeek || '' }}</div>
-            <div class="modal-time">⏰ {{ game.time || '時間未定' }}</div>
-            <div class="modal-location">📍 {{ game.location || '場地未定' }}</div>
-            <div class="modal-game-number" v-if="game.gameNumber">⚾ 場次：{{ game.gameNumber }}</div>
-            
+            <div class="modal-date-time">
+              📅 {{ game.date }} {{ game.dayOfWeek || '' }} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {{ game.time || '時間未定' }}
+            </div>
             <!-- Theme Day Section -->
             <div class="modal-theme-wrapper" style="margin-top: 8px;">
               <div v-if="!isEditingTheme" class="modal-theme">
@@ -64,6 +63,15 @@
         <div class="modal-section" v-else>
           <div class="modal-section-title">💃 啦啦隊</div>
           <p class="modal-empty">尚無班表資料</p>
+        </div>
+
+        <!-- Ticket Schedule Section -->
+        <div class="modal-section" v-if="ticketRulesList.length > 0">
+          <div class="modal-section-title">🎟️ 售票時程</div>
+          <div v-for="(rule, idx) in ticketRulesList" :key="idx" class="modal-friends-row" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span class="friends-label" style="font-weight: 600; width: 60%;">{{ rule.label }}</span>
+            <span style="color: var(--text-secondary); font-size: 0.9em;">{{ rule.dateStr }}</span>
+          </div>
         </div>
 
         <!-- Marks Section -->
@@ -146,6 +154,33 @@ const saveThemeDay = async () => {
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
+
+const ticketRulesList = computed(() => {
+  if (!props.game.gameNumber || props.game.gameNumber <= 180) {
+    return []; // 上半季不顯示
+  }
+
+  let rules = props.ticketRules?.gameSpecific?.[props.game.gameId];
+  
+  if (!rules || rules.length === 0) {
+    const isDome = props.game.location?.includes('巨蛋');
+    const type = isDome ? 'dome' : 'normal';
+    rules = props.ticketRules?.['2026']?.['H2']?.[props.game.homeTeam]?.[type];
+  }
+
+  if (!rules || rules.length === 0) {
+    return [];
+  }
+
+  return rules.map(rule => {
+    let dateStr = '未定';
+    if (rule.date) {
+      const d = new Date(rule.date);
+      dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+    return { label: rule.label, dateStr };
+  });
+});
 
 const marks = computed(() => props.userMarks?.[props.game.gameId] || {});
 const wantToWatch = computed(() => marks.value.wantToWatch);

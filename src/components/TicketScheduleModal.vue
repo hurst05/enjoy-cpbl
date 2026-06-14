@@ -61,13 +61,23 @@
           </div>
 
           <div v-if="selectedSpecificTeam" class="dome-container">
-            <div class="dome-games-list">
-              <h4>選擇巨蛋場次 (下半季)</h4>
-              <div v-if="domeGames.length === 0" class="empty-hint">無巨蛋主場賽事</div>
-              <label v-for="game in domeGames" :key="game.gameId" class="game-checkbox-label">
-                <input type="checkbox" :value="game.gameId" v-model="selectedGames" />
-                <span>{{ game.date }} ({{ game.gameNumber }}) vs {{ TEAM_NAME_MAP_REVERSE[game.awayTeam] || game.awayTeam }} @{{ game.location }}</span>
-              </label>
+            <div class="dome-games-container">
+              <div class="dome-games-header">
+                <h4>選擇巨蛋場次 (下半季)</h4>
+                <div v-if="domeGames.length === 0" class="empty-hint">無巨蛋主場賽事</div>
+                <div v-else class="select-all-wrapper">
+                  <label class="game-checkbox-label" style="padding: 0;">
+                    <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" />
+                    <span style="font-weight: bold;">全選 / 全不選</span>
+                  </label>
+                </div>
+              </div>
+              <div class="dome-games-list" v-if="domeGames.length > 0">
+                <label v-for="game in domeGames" :key="game.gameId" class="game-checkbox-label">
+                  <input type="checkbox" :value="game.gameId" v-model="selectedGames" />
+                  <span>{{ game.date }} ({{ game.gameNumber }}) vs {{ TEAM_NAME_MAP_REVERSE[game.awayTeam] || game.awayTeam }} @{{ game.location }}</span>
+                </label>
+              </div>
             </div>
 
             <div class="rules-editor" v-if="selectedGames.length > 0">
@@ -186,6 +196,18 @@ const saveGeneralRules = async () => {
 };
 
 // --- Tab B Logic ---
+const isAllSelected = computed(() => {
+  return domeGames.value.length > 0 && selectedGames.value.length === domeGames.value.length;
+});
+
+const toggleSelectAll = (e) => {
+  if (e.target.checked) {
+    selectedGames.value = domeGames.value.map(g => g.gameId);
+  } else {
+    selectedGames.value = [];
+  }
+};
+
 const loadDomeGames = () => {
   selectedGames.value = [];
   currentSpecificRules.value = [{ label: '全面開賣', date: '' }];
@@ -338,12 +360,27 @@ const saveSpecificRules = async () => {
   flex-direction: column;
   gap: 15px;
 }
+.dome-games-container {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+}
+.dome-games-header {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+.dome-games-header h4 {
+  margin: 0 0 10px 0;
+}
+.select-all-wrapper {
+  margin-top: 5px;
+}
 .dome-games-list {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid var(--border-color);
   padding: 10px;
-  border-radius: 8px;
 }
 .game-checkbox-label {
   display: flex;

@@ -30,11 +30,7 @@
         <div class="tooltip-card" v-html="cheerTooltipHtml"></div>
       </span>
 
-      <!-- Ticket -->
-      <span v-if="ticketTooltipHtml" class="tooltip-wrapper icon-ticket">
-        <span class="tooltip-trigger">🎟️</span>
-        <div class="tooltip-card" v-html="ticketTooltipHtml"></div>
-      </span>
+
 
       <!-- User Marks -->
       <span v-if="markData?.wantToWatch" class="game-mark-icon mark-want" title="想看">❤️</span>
@@ -103,40 +99,7 @@ const cheerTooltipHtml = computed(() => {
   return html;
 });
 
-const ticketTooltipHtml = computed(() => {
-  if (!props.game.gameNumber || props.game.gameNumber <= 180) {
-    return null; // 上半季不顯示
-  }
 
-  let rules = props.ticketRules?.gameSpecific?.[props.game.gameId];
-  
-  if (!rules || rules.length === 0) {
-    const isDome = props.game.location?.includes('巨蛋');
-    const type = isDome ? 'dome' : 'normal';
-    rules = props.ticketRules?.['2026']?.['H2']?.[props.game.homeTeam]?.[type];
-  }
-
-  if (!rules || rules.length === 0) {
-    return null; // 沒有設定規則時不顯示
-  }
-
-  let html = '<div class="tooltip-title">🎟️ 售票時程</div>';
-  
-  rules.forEach(rule => {
-    let dateStr = '未定';
-    if (rule.date) {
-      const d = new Date(rule.date);
-      dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    }
-    
-    html += `<div class="tooltip-section">
-      <div class="tooltip-team">${rule.label}</div>
-      <div class="tooltip-members">${dateStr}</div>
-    </div>`;
-  });
-
-  return html;
-});
 
 const friendsWantList = computed(() => {
   if (!props.groupMarks || Object.keys(props.groupMarks).length === 0) return [];

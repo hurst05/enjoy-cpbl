@@ -223,6 +223,10 @@ async function loadScheduleData() {
     
     scheduleData.value = data;
 
+    if (selectedGame.value && data[selectedGame.value.gameId]) {
+      selectedGame.value = data[selectedGame.value.gameId];
+    }
+
     const allCheers = await getAllCheerleaders() || {};
     cheerleaderData.value = allCheers;
     isMounted.value = true;
