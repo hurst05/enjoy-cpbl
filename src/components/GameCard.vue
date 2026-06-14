@@ -31,8 +31,14 @@
 
     <div class="game-icons">
       <!-- Cheerleader -->
-      <span class="tooltip-wrapper icon-cheer">
-        <span class="tooltip-trigger">💃</span>
+      <span v-if="hasCheerData" class="tooltip-wrapper icon-cheer hide-on-mobile">
+        <span class="tooltip-trigger" style="display: inline-flex; align-items: center; justify-content: center; color: var(--accent-coral);">
+          <svg viewBox="0 0 24 24" width="1.4em" height="1.4em" fill="currentColor">
+            <path d="M 6.5 7.5 Q 4 4, 1 3 Q 3 6, 5 8.5 Q 2 8, 0 9.5 Q 2.5 10.5, 5.5 11 Q 2 12, 1 15 Q 4 13.5, 7 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+            <path d="M 17.5 7.5 Q 20 4, 23 3 Q 21 6, 19 8.5 Q 22 8, 24 9.5 Q 21.5 10.5, 18.5 11 Q 22 12, 23 15 Q 20 13.5, 17 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+            <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--card-bg)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+          </svg>
+        </span>
         <div class="tooltip-card" v-html="cheerTooltipHtml"></div>
       </span>
 
@@ -87,11 +93,23 @@ const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const markData = computed(() => props.userMarks?.[props.game.gameId]);
 
+const hasCheerData = computed(() => {
+  const cheers = props.cheerleaderData?.[props.game.gameId];
+  return cheers && (cheers.homeMembers?.length > 0 || cheers.awayMembers?.length > 0);
+});
+
 const cheerTooltipHtml = computed(() => {
   const cheers = props.cheerleaderData?.[props.game.gameId];
   if (!cheers) return '<div class="tooltip-empty">尚無班表資料</div>';
 
-  let html = `<div class="tooltip-title">💃 啦啦隊應援</div>`;
+  let html = `<div class="tooltip-title">
+      <svg viewBox="0 0 24 24" width="1.3em" height="1.3em" fill="var(--accent-coral)" color="var(--accent-coral)" style="display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; margin-right: 4px;">
+        <path d="M 6.5 7.5 Q 4 4, 1 3 Q 3 6, 5 8.5 Q 2 8, 0 9.5 Q 2.5 10.5, 5.5 11 Q 2 12, 1 15 Q 4 13.5, 7 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+        <path d="M 17.5 7.5 Q 20 4, 23 3 Q 21 6, 19 8.5 Q 22 8, 24 9.5 Q 21.5 10.5, 18.5 11 Q 22 12, 23 15 Q 20 13.5, 17 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+        <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--bg-card)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+      </svg>
+      啦啦隊應援
+    </div>`;
   if (cheers.homeMembers?.length) {
     html += `<div class="tooltip-section">
       <div class="tooltip-team" style="color:${homeTeam.value.color}">${homeTeam.value.cheerName || homeTeam.value.name || '主場'}</div>

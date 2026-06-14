@@ -44,7 +44,14 @@
 
         <!-- Cheerleader Section -->
         <div class="modal-section" v-if="cheers">
-          <div class="modal-section-title">💃 啦啦隊應援名單</div>
+          <div class="modal-section-title">
+            <svg viewBox="0 0 24 24" width="1.3em" height="1.3em" fill="var(--accent-coral)" color="var(--accent-coral)" style="display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; margin-right: 4px;">
+              <path d="M 6.5 7.5 Q 4 4, 1 3 Q 3 6, 5 8.5 Q 2 8, 0 9.5 Q 2.5 10.5, 5.5 11 Q 2 12, 1 15 Q 4 13.5, 7 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 17.5 7.5 Q 20 4, 23 3 Q 21 6, 19 8.5 Q 22 8, 24 9.5 Q 21.5 10.5, 18.5 11 Q 22 12, 23 15 Q 20 13.5, 17 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--bg-card)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+            </svg>
+            啦啦隊應援名單
+          </div>
           
           <div v-if="cheers.homeMembers?.length" class="modal-cheer-group">
             <div class="modal-cheer-team" :style="{ color: homeTeam.color }">{{ homeTeam.cheerName || homeTeam.name || '主場' }}</div>
@@ -71,7 +78,14 @@
           </div>
         </div>
         <div class="modal-section" v-else>
-          <div class="modal-section-title">💃 啦啦隊</div>
+          <div class="modal-section-title">
+            <svg viewBox="0 0 24 24" width="1.3em" height="1.3em" fill="var(--accent-coral)" color="var(--accent-coral)" style="display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; margin-right: 4px;">
+              <path d="M 6.5 7.5 Q 4 4, 1 3 Q 3 6, 5 8.5 Q 2 8, 0 9.5 Q 2.5 10.5, 5.5 11 Q 2 12, 1 15 Q 4 13.5, 7 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 17.5 7.5 Q 20 4, 23 3 Q 21 6, 19 8.5 Q 22 8, 24 9.5 Q 21.5 10.5, 18.5 11 Q 22 12, 23 15 Q 20 13.5, 17 12 Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--bg-card)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+            </svg>
+            啦啦隊
+          </div>
           <p class="modal-empty">尚無班表資料</p>
         </div>
 
