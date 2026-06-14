@@ -57,6 +57,18 @@ export async function batchUpdateThemeDays(startDate, endDate, teamId, themeName
   return count;
 }
 
+export async function batchImportThemeDays(importData) {
+  if (!importData || Object.keys(importData).length === 0) return 0;
+  
+  const updates = {};
+  for (const [gameId, themeName] of Object.entries(importData)) {
+    updates[`themeDays/${gameId}`] = themeName || null;
+  }
+  
+  await update(ref(db), updates);
+  return Object.keys(importData).length;
+}
+
 // ===== Ticket Schedules =====
 
 export async function getTicketSchedules() {
