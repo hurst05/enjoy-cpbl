@@ -3,30 +3,80 @@
     <!-- ===== Left Sidebar ===== -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1 class="app-title">⚾ 開心看球趣</h1>
-        <span class="app-subtitle">CPBL 2026</span>
+        <h1 class="app-title">⚾ 開心看球趣</h1>        
       </div>
 
       <!-- 月份切換將會透過 Teleport 傳送到這裡 -->
       <div id="sidebar-month-nav"></div>
 
       <div class="sidebar-functions">
-        <div class="sync-buttons" v-if="isAdmin">
-          <button class="btn-sync btn-full" title="同步最新賽程" @click="handleSyncSchedules" :disabled="isSyncing">
-            <span class="sync-icon">⚾</span>
-            <span class="sync-text">更新賽程資料</span>
-          </button>
-          <button class="btn-sync btn-full" title="同步啦啦隊班表" @click="handleSyncCheerleaders" :disabled="isSyncing" style="margin-top: 10px;">
-            <span class="sync-icon">{{ isScrapeStarted ? '⏳' : '💃' }}</span>
-            <span class="sync-text">{{ isScrapeStarted ? '正在更新班表...' : '更新啦啦隊班表' }}</span>
-          </button>
+        <div class="admin-section" v-if="isAdmin">
+          <div class="admin-header" @click="showAdminMenu = !showAdminMenu">
+            <span class="admin-title">👑 管理員專區</span>
+            <span class="admin-icon">{{ showAdminMenu ? '▼' : '▶' }}</span>
+          </div>
+          <div class="admin-menu" v-show="showAdminMenu">
+            <div class="sync-buttons">
+              <button class="btn-sync btn-full" title="同步最新賽程" @click="handleSyncSchedules" :disabled="isSyncing">
+                <span class="sync-icon">⚾</span>
+                <span class="sync-text">更新賽程資料</span>
+              </button>
+              <button class="btn-sync btn-full" title="同步啦啦隊班表" @click="handleSyncCheerleaders" :disabled="isSyncing" style="margin-top: 10px;">
+                <span class="sync-icon">{{ isScrapeStarted ? '⏳' : '💃' }}</span>
+                <span class="sync-text">{{ isScrapeStarted ? '正在更新班表...' : '更新啦啦隊班表' }}</span>
+              </button>
+            </div>
+            <button class="btn-sync btn-full" title="批次主題日設定" @click="showThemeDayModal = true">
+              🎉 主題日批次管理
+            </button>
+            <button class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true">
+              🎟️ 售票時程管理
+            </button>
+          </div>
         </div>
-        <button v-if="isAdmin" class="btn-sync btn-full" title="批次主題日設定" @click="showThemeDayModal = true" style="margin-top: 10px;">
-          🎉 主題日批次管理
-        </button>
-        <button v-if="isAdmin" class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true" style="margin-top: 10px;">
-          🎟️ 售票時程管理
-        </button>
+
+        <div class="sidebar-filters">
+          <div class="filter-group">
+            <label>選擇球隊</label>
+            <select v-model="filters.team" class="filter-select">
+              <option value="">-- 所有球隊 --</option>
+              <option v-for="team in availableTeams" :key="team.id" :value="team.id">{{ team.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>選擇地點</label>
+            <select v-model="filters.location" class="filter-select">
+              <option value="">-- 所有地點 --</option>
+              <option v-for="loc in availableLocations" :key="loc" :value="loc">{{ loc }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>選擇啦啦隊</label>
+            <select v-model="filters.cheerTeam" class="filter-select" @change="filters.cheerMembers = []">
+              <option value="">-- 所有啦啦隊伍 --</option>
+              <option v-for="team in availableCheerTeams" :key="team" :value="team">{{ team }}</option>
+            </select>
+            
+            <div v-if="filters.cheerTeam" class="custom-multi-select" ref="cheerSelectRef">
+              <div class="select-header" @click="showCheerMembersMenu = !showCheerMembersMenu">
+                <span class="select-text">
+                  {{ filters.cheerMembers.length ? `已選擇 ${filters.cheerMembers.length} 位成員` : '-- 選擇特定成員 --' }}
+                </span>
+                <span class="select-icon">{{ showCheerMembersMenu ? '▲' : '▼' }}</span>
+              </div>
+              <div class="select-dropdown" v-show="showCheerMembersMenu">
+                <label class="select-option" v-for="member in cheerTeamMembers[filters.cheerTeam]" :key="member">
+                  <input type="checkbox" :value="member" v-model="filters.cheerMembers" />
+                  <span class="option-text">{{ member }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <button v-if="isFilterActive" @click="clearFilters" class="btn-clear-filters">清除篩選</button>
+        </div>
 
         <div class="auth-section">
           <div class="theme-switcher">
@@ -70,6 +120,8 @@
         :groupMarks="groupMarks"
         :ticketRules="ticketRules"
         :isAdmin="isAdmin"
+        :isFilterActive="isFilterActive"
+        :matchedGameIds="matchedGameIds"
         @game-click="handleGameClick"
       />
     </main>
@@ -84,6 +136,7 @@
       :currentUser="currentUser"
       :ticketRules="ticketRules"
       :isAdmin="isAdmin"
+      :highlightCheerMembers="filters.cheerMembers"
       @close="closeGameModal"
       @mark="handleMark"
       @game-updated="loadScheduleData"
@@ -142,6 +195,7 @@ import ScrapeProgressModal from './components/ScrapeProgressModal.vue';
 import { onAuthChange, signOutUser, getSchedules, saveSchedules, getAllCheerleaders, saveCheerleaders, getLastSync, setLastSync, getUserMarks, getUserProfile, getGroupMarks, setUserMark, getTicketSchedules, getThemeDays } from './firebase.js';
 import * as scraperModule from './utils/scraper.js';
 import { computed } from 'vue';
+import { TEAMS } from './data/defaultTeams.js';
 
 const currentUser = ref(null);
 const scheduleData = ref({});
@@ -160,6 +214,9 @@ const showGroupPanel = ref(false);
 const showThemeDayModal = ref(false);
 const showTicketScheduleModal = ref(false);
 const showScrapeProgressModal = ref(false);
+const showAdminMenu = ref(false);
+const showCheerMembersMenu = ref(false);
+const cheerSelectRef = ref(null);
 const isScrapeStarted = ref(false);
 const isScrapeCancelling = ref(false);
 const isScrapeDone = ref(false);
@@ -173,6 +230,128 @@ const scrapeProgress = ref({
 const selectedGame = ref(null);
 const isMounted = ref(false);
 const currentTheme = ref('pastel-glass');
+
+const filters = ref({
+  team: '',
+  location: '',
+  cheerTeam: '',
+  cheerMembers: []
+});
+
+const availableTeams = computed(() => {
+  return Object.entries(TEAMS).map(([id, team]) => ({ id, name: team.short || team.name }));
+});
+
+const availableLocations = computed(() => {
+  const locs = new Set();
+  Object.values(scheduleData.value).forEach(g => {
+    if (g.location) locs.add(g.location);
+  });
+  return Array.from(locs).sort();
+});
+
+const availableCheerTeams = computed(() => {
+  return Object.values(TEAMS).filter(t => t.cheerName).map(t => t.cheerName);
+});
+
+const cheerTeamMembers = computed(() => {
+  const mapping = {};
+  Object.values(TEAMS).forEach(t => {
+    if (t.cheerName) mapping[t.cheerName] = new Set();
+  });
+  
+  Object.entries(cheerleaderData.value).forEach(([gameId, gameCheers]) => {
+    const game = scheduleData.value[gameId];
+    if (!game) return;
+    const homeCheerName = TEAMS[game.homeTeam]?.cheerName;
+    const awayCheerName = TEAMS[game.awayTeam]?.cheerName;
+    
+    if (homeCheerName && gameCheers.homeMembers) {
+      gameCheers.homeMembers.forEach(m => mapping[homeCheerName].add(m));
+    }
+    if (awayCheerName && gameCheers.awayMembers) {
+      gameCheers.awayMembers.forEach(m => mapping[awayCheerName].add(m));
+    }
+  });
+  
+  const result = {};
+  for (const team in mapping) {
+    result[team] = Array.from(mapping[team]).sort();
+  }
+  return result;
+});
+
+const isFilterActive = computed(() => {
+  return filters.value.team !== '' || 
+         filters.value.location !== '' || 
+         filters.value.cheerTeam !== '' || 
+         filters.value.cheerMembers.length > 0;
+});
+
+function isGameMatched(game, gameCheers) {
+  const hasTeamFilter = filters.value.team !== '';
+  const hasLocFilter = filters.value.location !== '';
+  const hasCheerFilter = filters.value.cheerTeam !== '' || filters.value.cheerMembers.length > 0;
+
+  if (hasTeamFilter && game.homeTeam !== filters.value.team && game.awayTeam !== filters.value.team) {
+    return false;
+  }
+
+  if (hasLocFilter && game.location !== filters.value.location) {
+    return false;
+  }
+
+  if (hasCheerFilter) {
+    const homeCheerName = TEAMS[game.homeTeam]?.cheerName;
+    const awayCheerName = TEAMS[game.awayTeam]?.cheerName;
+    const hasHomeCheer = homeCheerName === filters.value.cheerTeam && gameCheers?.homeMembers?.length > 0;
+    const hasAwayCheer = awayCheerName === filters.value.cheerTeam && gameCheers?.awayMembers?.length > 0;
+
+    if (filters.value.cheerMembers.length > 0) {
+      const homeMatch = hasHomeCheer && filters.value.cheerMembers.some(m => gameCheers.homeMembers.includes(m));
+      const awayMatch = hasAwayCheer && filters.value.cheerMembers.some(m => gameCheers.awayMembers.includes(m));
+      if (!homeMatch && !awayMatch) return false;
+    } else {
+      if (!hasHomeCheer && !hasAwayCheer) return false;
+    }
+  }
+
+  return true;
+}
+
+const matchedGameIds = computed(() => {
+  if (!isFilterActive.value) return new Set();
+  const matched = new Set();
+  for (const gameId in scheduleData.value) {
+    const game = scheduleData.value[gameId];
+    const gameCheers = cheerleaderData.value[gameId];
+    if (isGameMatched(game, gameCheers)) {
+      matched.add(gameId);
+    }
+  }
+  return matched;
+});
+
+function toggleFilter(type, value) {
+  if (type === 'cheerMembers') {
+    const arr = filters.value[type];
+    const index = arr.indexOf(value);
+    if (index === -1) {
+      arr.push(value);
+    } else {
+      arr.splice(index, 1);
+    }
+  }
+}
+
+function clearFilters() {
+  filters.value = {
+    team: '',
+    location: '',
+    cheerTeam: '',
+    cheerMembers: []
+  };
+}
 
 function setTheme(theme) {
   currentTheme.value = theme;
@@ -195,6 +374,12 @@ onMounted(async () => {
       userMarks.value = {};
       groupMarks.value = {};
       userProfile.value = null;
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (cheerSelectRef.value && !cheerSelectRef.value.contains(e.target)) {
+      showCheerMembersMenu.value = false;
     }
   });
 

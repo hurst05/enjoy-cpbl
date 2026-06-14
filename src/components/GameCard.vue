@@ -1,10 +1,16 @@
 <template>
   <div 
     class="game-card" 
-    :class="{ 'game-card-list': mode === 'list', 'game-postponed': game.status === 'postponed' }"
+    :class="{ 
+      'game-card-list': mode === 'list', 
+      'game-postponed': game.status === 'postponed',
+      'game-card-filtered-out': isFilterActive && !isMatched,
+      'game-card-highlighted': isFilterActive && isMatched
+    }"
     :style="{ 
+      '--card-bg': `color-mix(in srgb, ${homeTeam.color} 15%, var(--bg-card))`,
       border: `2px solid ${homeTeam.color}`,
-      backgroundColor: `color-mix(in srgb, ${homeTeam.color} 15%, var(--bg-card))`
+      backgroundColor: `var(--card-bg)`
     }"
     @click="$emit('click')"
   >
@@ -72,7 +78,9 @@ const props = defineProps({
   userMarks: Object,
   groupMarks: Object,
   ticketRules: Object,
-  isAdmin: Boolean
+  isAdmin: Boolean,
+  isFilterActive: Boolean,
+  isMatched: Boolean
 });
 
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });

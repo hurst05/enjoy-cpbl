@@ -49,14 +49,24 @@
           <div v-if="cheers.homeMembers?.length" class="modal-cheer-group">
             <div class="modal-cheer-team" :style="{ color: homeTeam.color }">{{ homeTeam.cheerName || homeTeam.name || '主場' }}</div>
             <div class="modal-cheer-members">
-              <span v-for="member in cheers.homeMembers" :key="member" class="cheer-member">{{ member }}</span>
+              <span 
+                v-for="member in cheers.homeMembers" 
+                :key="member" 
+                class="cheer-member"
+                :class="{ 'cheer-member-highlighted': highlightCheerMembers.includes(member) }"
+              >{{ member }}</span>
             </div>
           </div>
           
           <div v-if="cheers.awayMembers?.length" class="modal-cheer-group">
             <div class="modal-cheer-team" :style="{ color: awayTeam.color }">{{ awayTeam.cheerName || awayTeam.name || '客場' }}</div>
             <div class="modal-cheer-members">
-              <span v-for="member in cheers.awayMembers" :key="member" class="cheer-member">{{ member }}</span>
+              <span 
+                v-for="member in cheers.awayMembers" 
+                :key="member" 
+                class="cheer-member"
+                :class="{ 'cheer-member-highlighted': highlightCheerMembers.includes(member) }"
+              >{{ member }}</span>
             </div>
           </div>
         </div>
@@ -127,7 +137,11 @@ const props = defineProps({
   groupMarks: Object,
   currentUser: Object,
   ticketRules: Object,
-  isAdmin: Boolean
+  isAdmin: Boolean,
+  highlightCheerMembers: {
+    type: Array,
+    default: () => []
+  }
 });
 
 const emit = defineEmits(['close', 'mark', 'game-updated']);

@@ -39,6 +39,8 @@
               :groupMarks="groupMarks"
               :ticketRules="ticketRules"
               :isAdmin="isAdmin"
+              :isFilterActive="isFilterActive"
+              :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
               @click="$emit('game-click', game)"
             />
           </div>
@@ -64,6 +66,8 @@
           :groupMarks="groupMarks"
           :ticketRules="ticketRules"
           :isAdmin="isAdmin"
+          :isFilterActive="isFilterActive"
+          :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
           @click="$emit('game-click', game)"
         />
       </div>
@@ -81,7 +85,9 @@ const props = defineProps({
   userMarks: Object,
   groupMarks: Object,
   ticketRules: Object,
-  isAdmin: Boolean
+  isAdmin: Boolean,
+  isFilterActive: Boolean,
+  matchedGameIds: Object
 });
 
 const emit = defineEmits(['game-click']);
