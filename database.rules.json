@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "usernames": {
+      ".read": true,
+      "$username": {
+        ".write": "auth != null" 
+      }
+    },
+
+    "schedules": {
+      ".read": true,
+      ".write": false 
+    },
+    
+    "themeDays": {
+      ".read": true,
+      ".write": false
+    },
+
+    "cheerleaders": {
+      ".read": true,
+      ".write": false
+    },
+
+    "groups": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    
+    "ticketSchedules": {
+      ".read": true,
+      ".write": false
+    },
+    
+    "lastSync": {
+      ".read": true,
+      ".write": false
+    }
+  }
+}

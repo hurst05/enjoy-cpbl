@@ -135,12 +135,21 @@ export async function setUserProfile(uid, data) {
 
 export async function deleteUserData(uid) {
   const profile = await getUserProfile(uid);
-  if (profile && profile.groups) {
-    for (const groupId of Object.keys(profile.groups)) {
-      await leaveGroup(uid, groupId);
+  if (profile) {
+    if (profile.groups) {
+      for (const groupId of Object.keys(profile.groups)) {
+        await leaveGroup(uid, groupId);
+      }
+    }
+    if (profile.displayName) {
+      await set(ref(db, `usernames/${profile.displayName}`), null);
     }
   }
   await set(ref(db, `users/${uid}`), null);
+}
+
+export async function registerUsername(username, uid, email) {
+  await set(ref(db, `usernames/${username}`), { uid, email: email || null });
 }
 
 // ===== Groups =====
@@ -211,16 +220,13 @@ export async function getGroupMarks(groups) {
 export async function loginAsUser(username) {
   let email = `${username}@enjoy-cpbl.local`;
   
-  // Try to find if user has a stored real email (e.g., from a linked/unlinked Google account)
+  // Try to find if user has a stored real email
   try {
-    const snap = await get(ref(db, 'users'));
+    const snap = await get(ref(db, `usernames/${username}`));
     if (snap.exists()) {
-      const users = snap.val();
-      for (const uid in users) {
-        if (users[uid].displayName === username && users[uid].email) {
-          email = users[uid].email;
-          break;
-        }
+      const data = snap.val();
+      if (data.email) {
+        email = data.email;
       }
     }
   } catch (e) {
@@ -240,6 +246,7 @@ export async function loginAsUser(username) {
       const cred = await createUserWithEmailAndPassword(auth, email, pwd);
       await updateProfile(cred.user, { displayName: username });
       await setUserProfile(cred.user.uid, { displayName: username, marks: {} });
+      await set(ref(db, `usernames/${username}`), { uid: cred.user.uid, email });
       return cred.user;
     } catch (createErr) {
       if (createErr.code === 'auth/email-already-in-use') {
@@ -251,13 +258,8 @@ export async function loginAsUser(username) {
 }
 
 export async function checkNicknameExists(username) {
-  const users = await getAllUsers();
-  for (const uid in users) {
-    if (users[uid].displayName === username) {
-      return true;
-    }
-  }
-  return false;
+  const snap = await get(ref(db, `usernames/${username}`));
+  return snap.exists();
 }
 
 export async function loginWithGoogle() {

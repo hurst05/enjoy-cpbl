@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { onAuthChange, getUserProfile, setUserProfile, signOutUser, linkGoogleAccount, unlinkGoogleAccount } from '../firebase.js';
+import { onAuthChange, getUserProfile, setUserProfile, signOutUser, linkGoogleAccount, unlinkGoogleAccount, registerUsername } from '../firebase.js';
 
 export function useAuth(onUserLoaded) {
   const currentUser = ref(null);
@@ -39,6 +39,10 @@ export function useAuth(onUserLoaded) {
       if (profile && !profile.email && currentUser.value.email) {
         await setUserProfile(currentUser.value.uid, { email: currentUser.value.email });
         profile.email = currentUser.value.email;
+      }
+      
+      if (profile && profile.displayName) {
+        await registerUsername(profile.displayName, currentUser.value.uid, profile.email);
       }
       
       userProfile.value = profile;
