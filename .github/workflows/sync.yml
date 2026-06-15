@@ -1,0 +1,43 @@
+name: Daily Sync CPBL Schedules and Cheerleaders
+
+on:
+  schedule:
+    # Run at 00:00 UTC (08:00 Taipei time) every day
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allows manual trigger from GitHub UI
+    inputs:
+      force:
+        description: 'Force update even if synced within 24h'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Scraper
+      env:
+        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      run: |
+        if [ "${{ github.event.inputs.force }}" = "true" ]; then
+          node scripts/sync-schedules.js --force
+          node scripts/sync-cheerleaders.js --force
+        else
+          node scripts/sync-schedules.js
+          node scripts/sync-cheerleaders.js
+        fi

@@ -5,9 +5,9 @@ import {
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, updateProfile,
-  GoogleAuthProvider, signInWithPopup, linkWithPopup, unlink, updatePassword
+  GoogleAuthProvider, signInWithPopup, linkWithPopup, unlink, updatePassword, updateEmail
 } from 'firebase/auth';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -209,7 +209,24 @@ export async function getGroupMarks(groups) {
 // ===== Auth =====
 
 export async function loginAsUser(username) {
-  const email = `${username}@enjoy-cpbl.local`;
+  let email = `${username}@enjoy-cpbl.local`;
+  
+  // Try to find if user has a stored real email (e.g., from a linked/unlinked Google account)
+  try {
+    const snap = await get(ref(db, 'users'));
+    if (snap.exists()) {
+      const users = snap.val();
+      for (const uid in users) {
+        if (users[uid].displayName === username && users[uid].email) {
+          email = users[uid].email;
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Lookup email failed', e);
+  }
+
   const pwd = `${username}_cpbl_pwd`;
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pwd);
@@ -268,11 +285,22 @@ export async function linkGoogleAccount() {
 export async function unlinkGoogleAccount(username) {
   if (!auth.currentUser) throw new Error('尚未登入');
   try {
-    await unlink(auth.currentUser, 'google.com');
-    // Restore default password for plain login
-    const pwd = `${username}_cpbl_pwd`;
+    const safeUsername = username.replace(/[\s@]/g, '');
+    
+    // We do NOT updateEmail here because Firebase now requires email verification 
+    // for updating emails by default. Instead, we keep their existing email 
+    // and rely on RTDB email lookup during loginAsUser.
+    
+    // Restore default password for plain login FIRST to ensure the account has a provider
+    const pwd = `${safeUsername}_cpbl_pwd`;
     await updatePassword(auth.currentUser, pwd);
+    
+    // Then unlink Google
+    await unlink(auth.currentUser, 'google.com');
   } catch (err) {
+    if (err.code === 'auth/requires-recent-login') {
+      throw new Error('為確保安全，請先「登出」並重新使用 Google 登入後，再執行解除綁定。');
+    }
     throw new Error('解除綁定失敗：' + err.message);
   }
 }

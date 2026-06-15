@@ -1,0 +1,76 @@
+{"users": [
+{
+  "localId": "721oa8pqF4bah8NmQjgZgc0zm5F2",
+  "email": "law@enjoy-cpbl.local",
+  "emailVerified": false,
+  "passwordHash": "ZPPEUnABh4S7Pgij4058ngaFZchD4arHeEST2JDBwgdaK+psehlMnLqcPpa3DovznDzFV2wGpO4hOeBH8E9RyA==",
+  "salt": "tuCUzdhqfWQBMA==",
+  "displayName": "Law",
+  "lastSignedInAt": "1781532299797",
+  "createdAt": "1781425654196",
+  "providerUserInfo": []
+},
+{
+  "localId": "JNCD7l9LJodJfjBVMy4NVhiDXjj2",
+  "email": "jackie@enjoy-cpbl.local",
+  "emailVerified": false,
+  "passwordHash": "VePoWB1xekcbRfisnIWeVWjtE7x0Kg8tbS8QyD5PDRTtwiY0E/pnFpXGv0DYmOK/SHKr/eDz46xSEXhUW22R2Q==",
+  "salt": "ajc7q+Qv1AmRHA==",
+  "displayName": "Jackie",
+  "lastSignedInAt": "1781506448992",
+  "createdAt": "1781505438427",
+  "providerUserInfo": []
+},
+{
+  "localId": "Mh4NbwbzYbZC2TGeiHkPtDm5wkF3",
+  "email": "admin@enjoy-cpbl.local",
+  "emailVerified": false,
+  "passwordHash": "hrEKHPqwmvrE9tANCJ7MToXCUwhyM+8sH9ztvEfqnJTTS591vQ7RafBfa2W2ib0GFu/H389Rrm8yTyTMhAcxPw==",
+  "salt": "6JONnfeKX26frA==",
+  "displayName": "管理員",
+  "lastSignedInAt": "1781533124549",
+  "createdAt": "1781425627924",
+  "providerUserInfo": []
+},
+{
+  "localId": "azTxs3VIzdeD0CxNYVmPgvVQCtZ2",
+  "email": "hurst1002@gmail.com",
+  "emailVerified": true,
+  "passwordHash": "4QDk6SeShj/dfTy9jdJnF4UAutAgnkqXW1Ox3cqwW3pNkb7wWPjOJMsGpe0BPQkTROfCHllTVgawZzAJ9WHCYA==",
+  "salt": "piRy3SbMHwhzdA==",
+  "displayName": "law chou",
+  "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKsBUcmRmz_jf2ITvUEGlWSgrauf3qva1KsCd7bb0mQ1pQxSQ=s96-c",
+  "lastSignedInAt": "1781533470086",
+  "createdAt": "1781531517603",
+  "providerUserInfo": [
+    {
+      "providerId": "google.com",
+      "rawId": "114779381781244418527",
+      "email": "hurst1002@gmail.com",
+      "displayName": "law chou",
+      "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocKsBUcmRmz_jf2ITvUEGlWSgrauf3qva1KsCd7bb0mQ1pQxSQ=s96-c"
+    }
+  ]
+},
+{
+  "localId": "bLIdYXjktPdkZeygdi5jpy7Q1jC2",
+  "email": "fat@enjoy-cpbl.local",
+  "emailVerified": false,
+  "passwordHash": "WOWil5A6DCWQCOfHxU/KSsCPKpmrKnniVxVXtSbMB/MDiTLLGGyTcybnuFG/mArCXsDgwVmcQKcIMEKVepi0Tw==",
+  "salt": "L04kByw7iRz/gg==",
+  "displayName": "fat",
+  "lastSignedInAt": "1781459593988",
+  "createdAt": "1781445107869",
+  "providerUserInfo": []
+},
+{
+  "localId": "fyxhu2aUm6d5UFP2ePxYrS6d2Lj2",
+  "email": "chou@enjoy-cpbl.local",
+  "emailVerified": false,
+  "passwordHash": "ljMDwp+cxb5K3e+VfuEphxyJ5HIxxuo0hc1OSeRipphQwfwaLCKq7F2J+w9PWR+CNayNAu81cJHKgJxyIKqryQ==",
+  "salt": "vEMY4A25G6FOZg==",
+  "displayName": "chou",
+  "lastSignedInAt": "1781459474033",
+  "createdAt": "1781444306489",
+  "providerUserInfo": []
+}]}

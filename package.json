@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync-schedules": "node scripts/sync-schedules.js",
+    "sync-cheerleaders": "node scripts/sync-cheerleaders.js"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",

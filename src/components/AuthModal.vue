@@ -80,7 +80,7 @@ import { ref } from 'vue';
 import { loginAsUser, loginAsAdmin, loginWithGoogle, checkNicknameExists, getUserProfile, setUserProfile } from '../firebase.js';
 import { updateProfile } from 'firebase/auth';
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'setup-complete']);
 
 const isAdminMode = ref(false);
 const username = ref('');
@@ -103,6 +103,9 @@ const handleLogin = async () => {
       if (!username.value) {
         throw new Error('請輸入暱稱');
       }
+      if (/[@\s]/.test(username.value)) {
+        throw new Error('暱稱不能包含空白或 @ 符號');
+      }
       await loginAsUser(username.value);
     }
     emit('close');
@@ -124,6 +127,7 @@ const handleGoogleLogin = async () => {
     } else {
       // New user, setup nickname
       tempGoogleUser.value = user;
+      googleNickname.value = (user.displayName || '').replace(/\s+/g, '');
       isGoogleSetupMode.value = true;
     }
   } catch (err) {
@@ -138,6 +142,10 @@ const handleGoogleLogin = async () => {
 
 const handleGoogleSetup = async () => {
   if (!googleNickname.value) return;
+  if (/[@\s]/.test(googleNickname.value)) {
+    alert('暱稱不能包含空白或 @ 符號，請修改');
+    return;
+  }
   isLoading.value = true;
   try {
     const isTaken = await checkNicknameExists(googleNickname.value);
@@ -147,6 +155,7 @@ const handleGoogleSetup = async () => {
     }
     await updateProfile(tempGoogleUser.value, { displayName: googleNickname.value });
     await setUserProfile(tempGoogleUser.value.uid, { displayName: googleNickname.value, marks: {} });
+    emit('setup-complete');
     emit('close');
   } catch (err) {
     alert('設定失敗：' + err.message);
