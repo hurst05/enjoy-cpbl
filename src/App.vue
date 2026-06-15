@@ -1,9 +1,12 @@
 <template>
   <div class="app-layout">
+    <div class="sidebar-overlay hide-on-desktop" v-if="isMobileMenuOpen" @click="isMobileMenuOpen = false"></div>
+    
     <!-- ===== Left Sidebar ===== -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ 'open': isMobileMenuOpen }">
       <div class="sidebar-header">
-        <h1 class="app-title">⚾ 開心看球趣</h1>        
+        <button class="btn-close-sidebar hide-on-desktop" @click="isMobileMenuOpen = false">×</button>
+        <h1 class="app-title hide-on-mobile">⚾ 開心看球趣</h1>        
       </div>
 
       <!-- 月份切換將會透過 Teleport 傳送到這裡 -->
@@ -121,6 +124,11 @@
 
     <!-- ===== Main Content ===== -->
     <main class="main-content">
+      <div class="mobile-header hide-on-desktop">
+        <button class="btn-hamburger" @click="isMobileMenuOpen = true">☰</button>
+        <h1 class="app-title">⚾ 開心看球趣</h1>
+      </div>
+      
       <Calendar 
         v-if="isMounted"
         :scheduleData="scheduleData" 
@@ -242,6 +250,7 @@ const showCheerMembersMenu = ref(false);
 const cheerSelectRef = ref(null);
 const showMarksMenu = ref(false);
 const marksSelectRef = ref(null);
+const isMobileMenuOpen = ref(false);
 
 const selectedGame = ref(null);
 const currentTheme = ref('pastel-glass');

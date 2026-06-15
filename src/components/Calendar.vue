@@ -1,8 +1,8 @@
 <template>
   <div>
     <!-- Month Navigation -->
-    <Teleport to="#sidebar-month-nav">
-      <nav id="month-nav" class="month-nav sidebar-month-nav">
+    <Teleport to="#sidebar-month-nav" :disabled="isMobile">
+      <nav id="month-nav" class="month-nav sidebar-month-nav" :class="{'mobile-nav': isMobile}">
         <div class="month-nav-controls">
           <button class="btn-month-arrow" aria-label="上個月" @click="changeMonth(-1)">‹</button>
           <h2 class="month-label">{{ currentYear }} 年 {{ currentMonth + 1 }} 月</h2>
@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import GameCard from './GameCard.vue';
 
 const props = defineProps({
@@ -95,6 +95,7 @@ const emit = defineEmits(['game-click']);
 const currentYear = ref(2026);
 const currentMonth = ref(5);
 const holidays = ref({});
+const isMobile = ref(false);
 
 const goToToday = () => {
   const now = new Date();
@@ -139,7 +140,17 @@ const loadHolidays = async (year) => {
 
 onMounted(() => {
   goToToday();
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
+});
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
 
 const firstDayOffset = computed(() => {
   const day = new Date(currentYear.value, currentMonth.value, 1).getDay();
