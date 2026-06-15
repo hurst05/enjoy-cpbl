@@ -5,6 +5,7 @@ import {
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut, onAuthStateChanged, updateProfile,
+  GoogleAuthProvider, signInWithPopup, linkWithPopup, unlink, updatePassword
 } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -214,6 +215,9 @@ export async function loginAsUser(username) {
     const cred = await signInWithEmailAndPassword(auth, email, pwd);
     return cred.user;
   } catch (err) {
+    if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+      throw new Error('此帳號已設定為需要 Google 登入驗證，請使用 Google 登入');
+    }
     // If sign in fails, attempt to create the user
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pwd);
@@ -221,8 +225,55 @@ export async function loginAsUser(username) {
       await setUserProfile(cred.user.uid, { displayName: username, marks: {} });
       return cred.user;
     } catch (createErr) {
+      if (createErr.code === 'auth/email-already-in-use') {
+        throw new Error('此帳號已被註冊，請檢查密碼或使用 Google 登入');
+      }
       throw new Error('登入失敗，請稍後再試');
     }
+  }
+}
+
+export async function checkNicknameExists(username) {
+  const users = await getAllUsers();
+  for (const uid in users) {
+    if (users[uid].displayName === username) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export async function loginWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  const cred = await signInWithPopup(auth, provider);
+  return cred.user;
+}
+
+export async function linkGoogleAccount() {
+  if (!auth.currentUser) throw new Error('尚未登入');
+  const provider = new GoogleAuthProvider();
+  try {
+    await linkWithPopup(auth.currentUser, provider);
+    // Bind successful, scramble the password to disable plain login
+    const randomPwd = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
+    await updatePassword(auth.currentUser, randomPwd);
+  } catch (err) {
+    if (err.code === 'auth/credential-already-in-use') {
+      throw new Error('此 Google 帳號已經被其他帳號綁定過了');
+    }
+    throw new Error('綁定失敗：' + err.message);
+  }
+}
+
+export async function unlinkGoogleAccount(username) {
+  if (!auth.currentUser) throw new Error('尚未登入');
+  try {
+    await unlink(auth.currentUser, 'google.com');
+    // Restore default password for plain login
+    const pwd = `${username}_cpbl_pwd`;
+    await updatePassword(auth.currentUser, pwd);
+  } catch (err) {
+    throw new Error('解除綁定失敗：' + err.message);
   }
 }
 

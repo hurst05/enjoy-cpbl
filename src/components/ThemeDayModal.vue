@@ -1,6 +1,6 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
+  <div class="modal-overlay">
+    <div class="modal-content modal-theme-day">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h3>🎉 主題日批次管理</h3>
       

@@ -1,6 +1,6 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
+  <div class="modal-overlay">
+    <div class="modal-content modal-large">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <div id="modal-body">
         <div class="modal-game-header">

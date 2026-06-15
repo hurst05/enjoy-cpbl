@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="handleCloseClick">
+  <div class="modal-overlay">
     <div class="modal-content" style="position: relative;">
       <!-- Close Button -->
       <button class="modal-close" @click="handleCloseClick" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-color);">&times;</button>

@@ -117,6 +117,9 @@
             <div class="user-info" :title="currentUser.email">
               👤 {{ isAdmin ? '👑 管理員' : (currentUser.displayName || currentUser.email.split('@')[0]) }}
             </div>
+            <button v-if="!isAdmin && !isGoogleLinked" class="btn-auth btn-ghost btn-full" title="綁定 Google 帳號" @click="handleLinkGoogle">🔗 綁定 Google</button>
+            <button v-if="!isAdmin && isGoogleLinked" class="btn-auth btn-ghost btn-full" title="解除綁定 Google 帳號" @click="handleUnlinkGoogle">🚫 解除綁定 Google</button>
+            <button class="btn-auth btn-ghost btn-full" title="我的標記清單" @click="showMyMarksModal = true">⭐ 我的標記</button>
             <button class="btn-auth btn-ghost btn-full" title="群組管理" @click="showGroupPanel = !showGroupPanel">👥 群組管理</button>
             <button class="btn-auth btn-ghost btn-full" @click="handleLogout">登出</button>
           </template>
@@ -182,6 +185,16 @@
       @saved="loadScheduleData"
     />
 
+    <MyMarksModal
+      v-if="showMyMarksModal"
+      :scheduleData="scheduleData"
+      :userMarks="userMarks"
+      :cheerleaderData="cheerleaderData"
+      :groupMarks="groupMarks"
+      @close="showMyMarksModal = false"
+      @game-click="handleGameClick"
+    />
+
     <TicketScheduleModal
       v-if="showTicketScheduleModal"
       @close="showTicketScheduleModal = false"
@@ -210,7 +223,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { 
   getSchedules, getThemeDays, getAllCheerleaders, onAuthChange,
-  getUserMarks, getUserProfile, getTicketSchedules, getGroupMarks, setUserProfile, signOutUser, saveSchedules, saveCheerleaders, getLastSync, setLastSync, setUserMark
+  getUserMarks, getUserProfile, getTicketSchedules, getGroupMarks, setUserProfile, signOutUser, saveSchedules, saveCheerleaders, getLastSync, setLastSync, setUserMark, linkGoogleAccount, unlinkGoogleAccount
 } from './firebase';
 import Calendar from './components/Calendar.vue';
 import GameModal from './components/GameModal.vue';
@@ -220,6 +233,7 @@ import ThemeDayModal from './components/ThemeDayModal.vue';
 import TicketScheduleModal from './components/TicketScheduleModal.vue';
 import ScrapeProgressModal from './components/ScrapeProgressModal.vue';
 import AdminUsersModal from './components/AdminUsersModal.vue';
+import MyMarksModal from './components/MyMarksModal.vue';
 
 import * as scraperModule from './utils/scraper.js';
 import { TEAMS } from './data/defaultTeams.js';
@@ -234,6 +248,11 @@ const ticketRules = ref({});
 
 const isAdmin = computed(() => userProfile.value?.isAdmin === true);
 
+const isGoogleLinked = computed(() => {
+  if (!currentUser.value) return false;
+  return currentUser.value.providerData.some(p => p.providerId === 'google.com');
+});
+
 const isSyncing = ref(false);
 const syncMessage = ref('正在更新資料...');
 const showAuthModal = ref(false);
@@ -242,6 +261,7 @@ const showThemeDayModal = ref(false);
 const showTicketScheduleModal = ref(false);
 const showScrapeProgressModal = ref(false);
 const showAdminUsersModal = ref(false);
+const showMyMarksModal = ref(false);
 const showAdminMenu = ref(false);
 const showCheerMembersMenu = ref(false);
 const cheerSelectRef = ref(null);
@@ -531,6 +551,29 @@ async function loadGroupData(groups) {
 
 async function handleLogout() {
   await signOutUser();
+}
+
+async function handleLinkGoogle() {
+  try {
+    await linkGoogleAccount();
+    alert('Google 帳號綁定成功！此帳號未來需使用 Google 登入驗證。');
+    // Force reactivity update
+    currentUser.value = { ...currentUser.value };
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function handleUnlinkGoogle() {
+  if (!confirm('確定要解除綁定 Google 帳號綁定嗎？您將恢復使用暱稱登入。')) return;
+  try {
+    const username = currentUser.value.displayName || currentUser.value.email.split('@')[0];
+    await unlinkGoogleAccount(username);
+    alert('Google 帳號已解除綁定！密碼已重置，您下次可直接使用暱稱登入。');
+    currentUser.value = { ...currentUser.value };
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 function handleGameClick(game) {
