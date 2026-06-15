@@ -19,13 +19,13 @@
             <span class="admin-icon">{{ showAdminMenu ? '▼' : '▶' }}</span>
           </div>
           <div class="admin-menu" v-show="showAdminMenu">
-            <button class="btn-sync btn-full" title="批次主題日設定" @click="showThemeDayModal = true">
+            <button class="btn-sync btn-full" title="批次主題日設定" @click="showThemeDayModal = true; isMobileMenuOpen = false">
               🎉 主題日批次管理
             </button>
-            <button class="btn-sync btn-full" title="帳號管理" @click="showAdminUsersModal = true">
+            <button class="btn-sync btn-full" title="帳號管理" @click="showAdminUsersModal = true; isMobileMenuOpen = false">
               🗑️ 帳號管理
             </button>
-            <button class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true">
+            <button class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true; isMobileMenuOpen = false">
               🎟️ 售票時程管理
             </button>
           </div>
@@ -109,14 +109,14 @@
             <div class="user-info" :title="currentUser.email">
               👤 {{ isAdmin ? '👑 管理員' : (currentUser.displayName || currentUser.email.split('@')[0]) }}
             </div>
-            <button v-if="!isAdmin && !isGoogleLinked" class="btn-auth btn-ghost btn-full" title="綁定 Google 帳號" @click="handleLinkGoogle">🔗 綁定 Google</button>
-            <button v-if="!isAdmin && isGoogleLinked" class="btn-auth btn-ghost btn-full" title="解除綁定 Google 帳號" @click="handleUnlinkGoogle">🚫 解除綁定 Google</button>
-            <button class="btn-auth btn-ghost btn-full" title="我的標記清單" @click="showMyMarksModal = true">⭐ 我的標記</button>
-            <button class="btn-auth btn-ghost btn-full" title="群組管理" @click="showGroupPanel = !showGroupPanel">👥 群組管理</button>
-            <button class="btn-auth btn-ghost btn-full" @click="handleLogout">登出</button>
+            <button v-if="!isAdmin && !isGoogleLinked" class="btn-auth btn-ghost btn-full" title="綁定 Google 帳號" @click="handleLinkGoogle(); isMobileMenuOpen = false">🔗 綁定 Google</button>
+            <button v-if="!isAdmin && isGoogleLinked" class="btn-auth btn-ghost btn-full" title="解除綁定 Google 帳號" @click="handleUnlinkGoogle(); isMobileMenuOpen = false">🚫 解除綁定 Google</button>
+            <button class="btn-auth btn-ghost btn-full" title="我的標記清單" @click="showMyMarksModal = true; isMobileMenuOpen = false">⭐ 我的標記</button>
+            <button class="btn-auth btn-ghost btn-full" title="群組管理" @click="showGroupPanel = !showGroupPanel; isMobileMenuOpen = false">👥 群組管理</button>
+            <button class="btn-auth btn-ghost btn-full" @click="handleLogout(); isMobileMenuOpen = false">登出</button>
           </template>
           <template v-else>
-            <button class="btn-auth btn-full" @click="showAuthModal = true">登入</button>
+            <button class="btn-auth btn-full" @click="showAuthModal = true; isMobileMenuOpen = false">登入</button>
           </template>
         </div>
       </div>
