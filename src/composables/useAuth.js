@@ -20,6 +20,11 @@ export function useAuth(onUserLoaded) {
       if (!profile) {
         const isGoogle = currentUser.value.providerData.some(p => p.providerId === 'google.com');
         if (isGoogle) {
+          if (!window.isLoggingInWithGoogle) {
+            console.warn('偵測到未完成設定的 Google 帳號，強制登出以重置狀態。');
+            await signOutUser();
+            currentUser.value = null;
+          }
           userProfile.value = null;
           return;
         } else {

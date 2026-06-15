@@ -1,7 +1,7 @@
 <template>
   <div class="modal-overlay">
     <div class="modal-content modal-auth">
-      <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
+      <button class="modal-close" aria-label="關閉" @click="handleClose">✕</button>
       
       <div v-if="!isGoogleSetupMode">
         <div class="auth-tabs">
@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { loginAsUser, loginAsAdmin, loginWithGoogle, checkNicknameExists, getUserProfile, setUserProfile } from '../firebase.js';
+import { loginAsUser, loginAsAdmin, loginWithGoogle, checkNicknameExists, getUserProfile, setUserProfile, signOutUser } from '../firebase.js';
 import { updateProfile } from 'firebase/auth';
 
 const emit = defineEmits(['close', 'setup-complete']);
@@ -90,6 +90,17 @@ const isLoading = ref(false);
 const isGoogleSetupMode = ref(false);
 const googleNickname = ref('');
 const tempGoogleUser = ref(null);
+
+const handleClose = async () => {
+  if (isGoogleSetupMode.value) {
+    console.warn('Google setup abandoned manually. Signing out.');
+    await signOutUser();
+    tempGoogleUser.value = null;
+    isGoogleSetupMode.value = false;
+    googleNickname.value = '';
+  }
+  emit('close');
+};
 
 const handleLogin = async () => {
   isLoading.value = true;
@@ -119,7 +130,10 @@ const handleLogin = async () => {
 const handleGoogleLogin = async () => {
   isLoading.value = true;
   try {
+    window.isLoggingInWithGoogle = true;
     const user = await loginWithGoogle();
+    window.isLoggingInWithGoogle = false;
+    
     const profile = await getUserProfile(user.uid);
     if (profile && profile.displayName) {
       // Existing user
@@ -131,6 +145,7 @@ const handleGoogleLogin = async () => {
       isGoogleSetupMode.value = true;
     }
   } catch (err) {
+    window.isLoggingInWithGoogle = false;
     console.error(err);
     if (err.code !== 'auth/popup-closed-by-user') {
       alert('Google 登入失敗：' + err.message);
