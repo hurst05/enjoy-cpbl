@@ -31,10 +31,24 @@ export async function fetchSchedulePage() {
       'AKK': 'T6'  // 台鋼雄鷹 (推測)
     };
 
+    // 依照 GameSno 進行分組，處理延賽狀況
+    const groupedGames = {};
     rawGames.forEach((g) => {
-      // GameNo: 1, GameDate: "2026-03-28T00:00:00"
-      // VisitingTeamCode: "ACN011" -> 取前三碼
-      // HomeTeamCode: "AJL011" -> 取前三碼
+      const sno = g.GameSno;
+      if (!groupedGames[sno]) groupedGames[sno] = [];
+      groupedGames[sno].push(g);
+    });
+
+    Object.values(groupedGames).forEach((group) => {
+      // 按照 GameDate 排序
+      group.sort((a, b) => new Date(a.GameDate) - new Date(b.GameDate));
+      
+      // 取出原始日期(第一筆)與當前有效場次(PresentStatus === 1 或最後一筆)
+      const originalGame = group[0];
+      const activeGame = group.find(g => g.PresentStatus === 1) || group[group.length - 1];
+
+      const g = activeGame;
+      
       try {
         const dateObj = new Date(g.GameDate);
         const y = dateObj.getFullYear();
@@ -43,7 +57,7 @@ export async function fetchSchedulePage() {
         const dateStr = `${y}-${m}-${d}`;
         const dayOfWeek = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'][dateObj.getDay()];
 
-        // 時間 (GameDateTimeS 可能是 "2026-03-28T17:06:00" 或是 "2026-03-28T17:05:00")
+        // 時間
         let time = '';
         if (g.GameDateTimeS) {
            const tDate = new Date(g.GameDateTimeS);
@@ -67,6 +81,21 @@ export async function fetchSchedulePage() {
         const validTeams = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'];
         const cheerPath = validTeams.includes(homeTeam) ? `/${dateStr}/${homeTeam}` : null;
 
+        // 判斷是否為延賽，並取得原始日期資訊
+        let isPostponed = false;
+        let originalDateStr = null;
+        let originalCheerPath = null;
+
+        if (originalGame && originalGame.GameDate !== activeGame.GameDate) {
+          isPostponed = true;
+          const origD = new Date(originalGame.GameDate);
+          const origY = origD.getFullYear();
+          const origM = String(origD.getMonth() + 1).padStart(2, '0');
+          const origDd = String(origD.getDate()).padStart(2, '0');
+          originalDateStr = `${origY}-${origM}-${origDd}`;
+          originalCheerPath = validTeams.includes(homeTeam) ? `/${originalDateStr}/${homeTeam}` : null;
+        }
+
         games.push({
           gameId,
           date: dateStr,
@@ -78,6 +107,9 @@ export async function fetchSchedulePage() {
           gameNumber: g.GameSno,
           cpblLink: `https://www.cpbl.com.tw/box?year=${y}&kindCode=${g.KindCode}&gameSno=${g.GameSno}`,
           cheerDetailPath: cheerPath,
+          isPostponed,
+          originalDate: originalDateStr,
+          originalCheerPath,
           themeDay: null,
           status: g.GameResult === '0' ? 'normal' : 'finished',
         });
@@ -196,7 +228,7 @@ export async function syncCheerleaders(forceUpdate, firebase, options = {}) {
 
     // 過濾出今天及未來的賽程，並且有 cheerDetailPath
     const games = Object.values(schedules)
-      .filter(g => g.cheerDetailPath && g.date >= todayStr)
+      .filter(g => (g.cheerDetailPath || g.originalCheerPath) && g.date >= todayStr)
       .sort((a, b) => a.date.localeCompare(b.date)); // 確保照時間順序爬
 
     console.log(`過濾後剩下 ${games.length} 場未來賽事準備爬取...`);
@@ -219,13 +251,30 @@ export async function syncCheerleaders(forceUpdate, firebase, options = {}) {
       }
 
       try {
-        const members = await fetchCheerleaderPage(game.cheerDetailPath);
+        let members = [];
+        if (game.cheerDetailPath) {
+          members = await fetchCheerleaderPage(game.cheerDetailPath);
+        }
+
         if (members.length > 0) {
           await firebase.saveCheerleaders(game.gameId, {
             homeMembers: members,
             awayMembers: [], // Only populated for 南人季 etc.
+            fetchedDate: game.date
           });
           cheersUpdated++;
+        } else if (game.isPostponed && game.originalCheerPath) {
+          // 若無新班表且為延賽，嘗試抓取原始日期的班表
+          const originalMembers = await fetchCheerleaderPage(game.originalCheerPath);
+          if (originalMembers.length > 0) {
+            await firebase.saveCheerleaders(game.gameId, {
+              homeMembers: originalMembers,
+              awayMembers: [],
+              fetchedDate: game.originalDate,
+              isFallback: true
+            });
+            cheersUpdated++;
+          }
         }
 
         // Polite delay between requests

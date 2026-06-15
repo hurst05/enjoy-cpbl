@@ -29,6 +29,9 @@
             <button class="btn-sync btn-full" title="批次主題日設定" @click="showThemeDayModal = true">
               🎉 主題日批次管理
             </button>
+            <button class="btn-sync btn-full" title="帳號管理" @click="showAdminUsersModal = true">
+              🗑️ 帳號管理
+            </button>
             <button class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true">
               🎟️ 售票時程管理
             </button>
@@ -74,6 +77,25 @@
               </div>
             </div>
           </div>
+
+          <div class="filter-group" v-if="currentUser">
+            <label>標記篩選</label>
+            <div class="custom-multi-select" ref="marksSelectRef">
+              <div class="select-header" @click="showMarksMenu = !showMarksMenu">
+                <span class="select-text">
+                  {{ filters.marks.length ? `已選擇 ${filters.marks.length} 項標記` : '-- 選擇標記 --' }}
+                </span>
+                <span class="select-icon">{{ showMarksMenu ? '▲' : '▼' }}</span>
+              </div>
+              <div class="select-dropdown" v-show="showMarksMenu">
+                <label class="select-option" v-for="mark in availableMarks" :key="mark.id">
+                  <input type="checkbox" :value="mark.id" v-model="filters.marks" />
+                  <span class="option-text">{{ mark.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
           
           <button v-if="isFilterActive" @click="clearFilters" class="btn-clear-filters">清除篩選</button>
         </div>
@@ -179,11 +201,17 @@
       @cancel="cancelScrape"
       @close="closeScrapeProgress"
     />
+    <AdminUsersModal v-if="showAdminUsersModal" @close="showAdminUsersModal = false" />
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { 
+  getSchedules, getThemeDays, getAllCheerleaders, onAuthChange,
+  getUserMarks, getUserProfile, getTicketSchedules, getGroupMarks, setUserProfile, signOutUser, saveSchedules, saveCheerleaders, getLastSync, setLastSync, setUserMark
+} from './firebase';
 import Calendar from './components/Calendar.vue';
 import GameModal from './components/GameModal.vue';
 import AuthModal from './components/AuthModal.vue';
@@ -191,10 +219,9 @@ import GroupPanel from './components/GroupPanel.vue';
 import ThemeDayModal from './components/ThemeDayModal.vue';
 import TicketScheduleModal from './components/TicketScheduleModal.vue';
 import ScrapeProgressModal from './components/ScrapeProgressModal.vue';
+import AdminUsersModal from './components/AdminUsersModal.vue';
 
-import { onAuthChange, signOutUser, getSchedules, saveSchedules, getAllCheerleaders, saveCheerleaders, getLastSync, setLastSync, getUserMarks, getUserProfile, getGroupMarks, setUserMark, getTicketSchedules, getThemeDays } from './firebase.js';
 import * as scraperModule from './utils/scraper.js';
-import { computed } from 'vue';
 import { TEAMS } from './data/defaultTeams.js';
 
 const currentUser = ref(null);
@@ -214,9 +241,12 @@ const showGroupPanel = ref(false);
 const showThemeDayModal = ref(false);
 const showTicketScheduleModal = ref(false);
 const showScrapeProgressModal = ref(false);
+const showAdminUsersModal = ref(false);
 const showAdminMenu = ref(false);
 const showCheerMembersMenu = ref(false);
 const cheerSelectRef = ref(null);
+const showMarksMenu = ref(false);
+const marksSelectRef = ref(null);
 const isScrapeStarted = ref(false);
 const isScrapeCancelling = ref(false);
 const isScrapeDone = ref(false);
@@ -235,7 +265,20 @@ const filters = ref({
   team: '',
   location: '',
   cheerTeam: '',
-  cheerMembers: []
+  cheerMembers: [],
+  marks: []
+});
+
+const availableMarks = computed(() => {
+  const marks = [
+    { id: 'wantToWatch', label: '想去的' },
+    { id: 'ticketPurchased', label: '買票的' }
+  ];
+  if (groupMarks.value && Object.keys(groupMarks.value).length > 0) {
+    marks.push({ id: 'groupWantToWatch', label: '群組想去的' });
+    marks.push({ id: 'groupTicketPurchased', label: '群組已買票的' });
+  }
+  return marks;
 });
 
 const availableTeams = computed(() => {
@@ -285,7 +328,8 @@ const isFilterActive = computed(() => {
   return filters.value.team !== '' || 
          filters.value.location !== '' || 
          filters.value.cheerTeam !== '' || 
-         filters.value.cheerMembers.length > 0;
+         filters.value.cheerMembers.length > 0 ||
+         filters.value.marks.length > 0;
 });
 
 function isGameMatched(game, gameCheers) {
@@ -314,6 +358,29 @@ function isGameMatched(game, gameCheers) {
     } else {
       if (!hasHomeCheer && !hasAwayCheer) return false;
     }
+  }
+
+  const hasMarksFilter = filters.value.marks && filters.value.marks.length > 0;
+  if (hasMarksFilter) {
+    let markMatched = false;
+    const gameId = game.gameId;
+    const userMark = userMarks.value?.[gameId];
+    
+    if (filters.value.marks.includes('wantToWatch') && userMark?.wantToWatch) markMatched = true;
+    if (filters.value.marks.includes('ticketPurchased') && userMark?.ticketPurchased) markMatched = true;
+    
+    if (!markMatched && (filters.value.marks.includes('groupWantToWatch') || filters.value.marks.includes('groupTicketPurchased'))) {
+      if (groupMarks.value) {
+        for (const [uid, userData] of Object.entries(groupMarks.value)) {
+          const gMark = userData.marks?.[gameId];
+          if (filters.value.marks.includes('groupWantToWatch') && gMark?.wantToWatch) markMatched = true;
+          if (filters.value.marks.includes('groupTicketPurchased') && gMark?.ticketPurchased) markMatched = true;
+          if (markMatched) break;
+        }
+      }
+    }
+
+    if (!markMatched) return false;
   }
 
   return true;
@@ -349,7 +416,8 @@ function clearFilters() {
     team: '',
     location: '',
     cheerTeam: '',
-    cheerMembers: []
+    cheerMembers: [],
+    marks: []
   };
 }
 
@@ -380,6 +448,9 @@ onMounted(async () => {
   document.addEventListener('click', (e) => {
     if (cheerSelectRef.value && !cheerSelectRef.value.contains(e.target)) {
       showCheerMembersMenu.value = false;
+    }
+    if (marksSelectRef.value && !marksSelectRef.value.contains(e.target)) {
+      showMarksMenu.value = false;
     }
   });
 
@@ -423,11 +494,19 @@ async function loadScheduleData() {
 async function loadUserData() {
   if (!currentUser.value) return;
   try {
+    let profile = await getUserProfile(currentUser.value.uid);
+    
+    // 如果登入成功但沒有 profile，代表是舊帳號被刪除後重新登入，直接重建一份新的 profile
+    if (!profile) {
+      const displayName = currentUser.value.displayName || currentUser.value.email.split('@')[0];
+      await setUserProfile(currentUser.value.uid, { displayName, marks: {} });
+      profile = await getUserProfile(currentUser.value.uid);
+    }
+    
+    userProfile.value = profile;
+
     const marks = await getUserMarks(currentUser.value.uid);
     userMarks.value = marks || {};
-
-    const profile = await getUserProfile(currentUser.value.uid);
-    userProfile.value = profile;
 
     if (profile?.groups) {
       await loadGroupData(profile.groups);

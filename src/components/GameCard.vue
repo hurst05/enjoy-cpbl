@@ -109,6 +109,7 @@ const cheerTooltipHtml = computed(() => {
         <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--bg-card)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
       </svg>
       啦啦隊應援
+      ${cheers.isFallback ? '<span style="font-size: 0.8em; color: var(--text-secondary); margin-left: 4px; font-weight: normal;">(顯示原訂日期班表)</span>' : ''}
     </div>`;
   if (cheers.homeMembers?.length) {
     html += `<div class="tooltip-section">

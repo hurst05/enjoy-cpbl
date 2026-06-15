@@ -118,6 +118,11 @@ export async function setUserMark(uid, gameId, markType, value) {
 
 // ===== User Profile =====
 
+export async function getAllUsers() {
+  const snapshot = await get(ref(db, 'users'));
+  return snapshot.val() || {};
+}
+
 export async function getUserProfile(uid) {
   const snapshot = await get(ref(db, `users/${uid}`));
   return snapshot.val();
@@ -125,6 +130,16 @@ export async function getUserProfile(uid) {
 
 export async function setUserProfile(uid, data) {
   await update(ref(db, `users/${uid}`), data);
+}
+
+export async function deleteUserData(uid) {
+  const profile = await getUserProfile(uid);
+  if (profile && profile.groups) {
+    for (const groupId of Object.keys(profile.groups)) {
+      await leaveGroup(uid, groupId);
+    }
+  }
+  await set(ref(db, `users/${uid}`), null);
 }
 
 // ===== Groups =====
@@ -156,6 +171,10 @@ export async function joinGroup(uid, displayName, groupId) {
 
 export async function leaveGroup(uid, groupId) {
   await set(ref(db, `groups/${groupId}/members/${uid}`), null);
+  const remainingMembers = await getGroupMembers(groupId);
+  if (!remainingMembers || Object.keys(remainingMembers).length === 0) {
+    await set(ref(db, `groups/${groupId}`), null);
+  }
 }
 
 export async function getGroupMembers(groupId) {
