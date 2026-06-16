@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content modal-ticket-rule">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h3>🎟️ 售票規則管理</h3>
@@ -39,6 +39,12 @@ import { getTicketRules, saveTicketRules } from '../firebase.js';
 import { TEAMS } from '../data/defaultTeams.js';
 
 const emit = defineEmits(['close', 'saved']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 const localRules = ref({});
 const loading = ref(true);

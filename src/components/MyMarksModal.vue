@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content modal-large">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h2 class="modal-title">⭐ 我的標記清單 ({{ currentYear }})</h2>
@@ -74,6 +74,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 const currentYear = new Date().getFullYear();
 const selectedGames = ref([]);

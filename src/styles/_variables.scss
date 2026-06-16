@@ -1,0 +1,69 @@
+/* ===== Google Fonts ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+/* ===== CSS Variables ===== */
+:root {
+  /* Backgrounds */
+  /* Default Theme (Warm Cream) */
+  --bg-primary: #fafaf7;
+  --bg-main-image: none;
+  --bg-main-size: auto;
+  
+  /* Shared Base Backgrounds */
+  --bg-card: #ffffff;
+  --bg-hover: #f5f5f0;
+  --bg-weekend: #fff8f0;
+  --bg-holiday: #fff0f0;
+  --bg-today: #fffde7;
+
+  /* Accents */
+  --accent-coral: #ff7f6e;
+  --accent-blue: #4da6ff;
+  --accent-yellow: #ffc857;
+  --accent-green: #6ecf94;
+  --accent-lavender: #b197fc;
+
+  /* Text */
+  --text-primary: #2d2d2d;
+  --text-secondary: #666;
+  --text-muted: #aaa;
+  --text-white: #fff;
+
+  /* Borders & Radius */
+  --border-color: #eee;
+  --border-light: #f0f0f0;
+  --radius-card: 14px;
+  --radius-btn: 10px;
+  --radius-pill: 50px;
+  --radius-avatar: 50%;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --shadow-tooltip: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-modal: 0 12px 48px rgba(0, 0, 0, 0.18);
+
+  /* Team Colors */
+  --team-T1: #ffcc00;
+  --team-T2: #ed1d24;
+  --team-T3: #590011;
+  --team-T4: #004a9c;
+  --team-T5: #eb5c01;
+  --team-T6: #005931;
+
+  /* Sizing */
+  --header-height: 60px;
+  --cell-min-height: 100px;
+
+  /* Theme-level tokens (overridden per theme) */
+  --theme-sidebar-bg: #ffffff;
+  --theme-sidebar-border-color: #f0f0f0;
+  --theme-accent: #7a8594;
+  --theme-accent-hover: #636f7e;
+  --theme-dow-bg: #7a8594;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #e8e8e8;
+  --theme-sync-from: #7a8594;
+  --theme-sync-to: #a3aab8;
+}
+

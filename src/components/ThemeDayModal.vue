@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content modal-theme-day">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h3>🎉 主題日批次管理</h3>
@@ -65,6 +65,12 @@ import { batchUpdateThemeDays } from '../firebase.js';
 import { TEAMS, TEAM_NAME_MAP } from '../data/defaultTeams.js';
 
 const emit = defineEmits(['close', 'saved']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 const startDate = ref('');
 const endDate = ref('');

@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content admin-users-modal">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h3>🗑️ 帳號管理</h3>
@@ -31,6 +31,13 @@ import { ref, onMounted } from 'vue';
 import { getAllUsers, deleteUserData } from '../firebase';
 
 const emit = defineEmits(['close']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
+
 const users = ref([]);
 const isLoading = ref(true);
 const deletingUid = ref(null);

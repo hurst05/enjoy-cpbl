@@ -1,0 +1,88 @@
+/* ===== Theme Overrides ===== */
+body[data-theme="warm-cream"] {
+  --bg-primary: #f4efe6;
+  --bg-main-image: none;
+  --bg-main-size: auto;
+  --theme-sidebar-bg: #f4efe6;
+  --theme-sidebar-border-color: #e5ded2;
+  --theme-accent: #c4a882;
+  --theme-accent-hover: #b09770;
+  --theme-dow-bg: #c4a882;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #e5ded2;
+  --theme-sync-from: #d6b89c;
+  --theme-sync-to: #e8c9a0;
+}
+
+body[data-theme="tactile"] {
+  --bg-primary: #e6e9ef;
+  --bg-main-image: radial-gradient(#a3aab8 1px, transparent 1px);
+  --bg-main-size: 16px 16px;
+  --theme-sidebar-bg: #eaecf0;
+  --theme-sidebar-border-color: #d0d4db;
+  --theme-accent: #7a8594;
+  --theme-accent-hover: #636f7e;
+  --theme-dow-bg: #7a8594;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #d5d8de;
+  --theme-sync-from: #7a8594;
+  --theme-sync-to: #a3aab8;
+}
+
+body[data-theme="icy-blue"] {
+  --bg-primary: #dbeafe;
+  --bg-main-image: none;
+  --theme-sidebar-bg: #e8f1fb;
+  --theme-sidebar-border-color: #b8d0ea;
+  --theme-accent: #5b9bd5;
+  --theme-accent-hover: #4889c3;
+  --theme-dow-bg: #5b9bd5;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #c8ddf0;
+  --theme-sync-from: #5b9bd5;
+  --theme-sync-to: #8ec0f0;
+}
+
+body[data-theme="mint-sage"] {
+  --bg-primary: #dcfce7;
+  --bg-main-image: none;
+  --theme-sidebar-bg: #e6f5ec;
+  --theme-sidebar-border-color: #b3d6c2;
+  --theme-accent: #5aab80;
+  --theme-accent-hover: #489a6e;
+  --theme-dow-bg: #5aab80;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #c3e0ce;
+  --theme-sync-from: #5aab80;
+  --theme-sync-to: #8fd4a8;
+}
+
+body[data-theme="soft-lilac"] {
+  --bg-primary: #f3e8ff;
+  --bg-main-image: none;
+  --theme-sidebar-bg: #f0e8fa;
+  --theme-sidebar-border-color: #d0c2e4;
+  --theme-accent: #9b7ec8;
+  --theme-accent-hover: #8a6bb7;
+  --theme-dow-bg: #9b7ec8;
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #d8cce8;
+  --theme-sync-from: #9b7ec8;
+  --theme-sync-to: #c4aee0;
+}
+
+body[data-theme="pastel-glass"] {
+  --bg-primary: #fff0f5;
+  --bg-main-image: radial-gradient(at 0% 0%, hsla(253,80%,70%,0.15) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,80%,70%,0.15) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,80%,70%,0.15) 0, transparent 50%);
+  --bg-main-size: cover;
+  --theme-sidebar-bg: #f8edf7;
+  --theme-sidebar-border-color: #dcc8da;
+  --theme-accent: #c08dbd;
+  --theme-accent-hover: #ad7aaa;
+  --theme-dow-bg: linear-gradient(135deg, #c08dbd, #8dadc0);
+  --theme-dow-text: #ffffff;
+  --theme-cell-border: #e4d0e2;
+  --theme-sync-from: #c08dbd;
+  --theme-sync-to: #8dadc0;
+}
+

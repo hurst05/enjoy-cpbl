@@ -1,14 +1,12 @@
-import { readFile } from 'fs/promises';
+import puppeteer from 'puppeteer';
 
-async function checkFirebase() {
-  const configStr = await readFile('./firebase-applet-config.json', 'utf-8');
-  const config = JSON.parse(configStr);
-  const dbUrl = config.databaseURL + '/schedules.json';
-  
-  const res = await fetch(dbUrl);
-  const data = await res.json();
-  console.log('Schedules count:', data ? Object.keys(data).length : 0);
-  if (!data) console.log('Data is null/empty!');
+async function test() {
+  const browser = await puppeteer.launch({ headless: 'new' });
+  const page = await browser.newPage();
+  await page.goto('https://www.cpbl.com.tw/schedule', { waitUntil: 'networkidle2' });
+  const data = await page.evaluate(() => window.app.gameDatas.slice(0, 2));
+  console.log(JSON.stringify(data, null, 2));
+  await browser.close();
 }
 
-checkFirebase();
+test();

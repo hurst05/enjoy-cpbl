@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content modal-auth">
       <button class="modal-close" aria-label="關閉" @click="handleClose">✕</button>
       
@@ -90,6 +90,12 @@ const isLoading = ref(false);
 const isGoogleSetupMode = ref(false);
 const googleNickname = ref('');
 const tempGoogleUser = ref(null);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    handleClose();
+  }
+};
 
 const handleClose = async () => {
   if (isGoogleSetupMode.value) {

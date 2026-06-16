@@ -26,8 +26,11 @@
           <div class="cell-day-number">
             <span class="day-text">{{ day }}</span>
             <span v-if="getHolidayName(day)" class="cell-holiday-tag">{{ getHolidayName(day) }}</span>
+            <span v-for="(event, idx) in getTicketSalesForDay(day)" :key="'ticket-'+day+'-'+idx" class="ticket-badge-inline" :style="{ backgroundColor: event.color, color: event.textColor }">
+              {{ event.time }} {{ event.label }}
+            </span>
           </div>
-          
+
           <div v-if="getGamesForDay(day).length" class="cell-games">
             <GameCard 
               v-for="game in getGamesForDay(day)" 
@@ -50,12 +53,16 @@
 
     <!-- List View (Mobile) -->
     <div class="list-container">
-      <div v-for="day in daysWithGames" :key="'list-'+day" class="list-day-section" :class="{'list-day-today': isToday(day)}">
+      <div v-for="day in daysWithItems" :key="'list-'+day" class="list-day-section" :class="{'list-day-today': isToday(day)}">
         <div class="list-day-header">
           <span class="list-day-date">{{ currentMonth + 1 }}/{{ day }}</span>
           <span class="list-day-dow" :class="{'list-day-weekend': isWeekend(day)}">({{ getDowName(day) }})</span>
           <span v-if="getHolidayName(day)" class="list-holiday-badge">{{ getHolidayName(day) }}</span>
+          <span v-for="(event, idx) in getTicketSalesForDay(day)" :key="'list-ticket-'+day+'-'+idx" class="ticket-badge-inline" :style="{ backgroundColor: event.color, color: event.textColor }">
+            {{ event.time }} {{ event.label }}
+          </span>
         </div>
+
         <GameCard 
           v-for="game in getGamesForDay(day)" 
           :key="game.gameId"
@@ -78,6 +85,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import GameCard from './GameCard.vue';
+import { TEAMS } from '../data/defaultTeams.js';
 
 const props = defineProps({
   scheduleData: Object,
@@ -161,12 +169,92 @@ const daysInMonth = computed(() => {
   return new Date(currentYear.value, currentMonth.value + 1, 0).getDate();
 });
 
-const daysWithGames = computed(() => {
-  const days = [];
-  for (let day = 1; day <= daysInMonth.value; day++) {
-    if (getGamesForDay(day).length > 0) days.push(day);
+const ticketSalesEvents = computed(() => {
+  const eventsMap = new Map();
+  if (!props.ticketRules) return [];
+
+  // 一般賽事
+  if (props.ticketRules['2026']) {
+    for (const half of Object.values(props.ticketRules['2026'])) {
+      for (const [teamId, types] of Object.entries(half)) {
+        if (types.normal) {
+          types.normal.forEach(rule => {
+            if (rule.date) {
+              const [date, time] = rule.date.split('T');
+              const team = TEAMS[teamId];
+              if (team) {
+                const key = `${date}-${time}-${teamId}-general-${rule.label}`;
+                if (!eventsMap.has(key)) {
+                  eventsMap.set(key, {
+                    date,
+                    time: time || '12:00',
+                    label: rule.label,
+                    teamId,
+                    teamName: team.name,
+                    teamShort: team.short,
+                    color: team.color,
+                    textColor: team.textColor
+                  });
+                }
+              }
+            }
+          });
+        }
+      }
+    }
   }
-  return days;
+
+  // 特殊賽事
+  if (props.ticketRules.gameSpecific) {
+    for (const [gameId, rules] of Object.entries(props.ticketRules.gameSpecific)) {
+      const game = props.scheduleData ? props.scheduleData[gameId] : null;
+      let teamId = null;
+      let location = '';
+      if (game) {
+        teamId = game.homeTeam;
+        location = game.location;
+      }
+      rules.forEach(rule => {
+        if (rule.date) {
+          const [date, time] = rule.date.split('T');
+          const team = teamId ? TEAMS[teamId] : { name: '特殊', short: '特殊', color: '#666', textColor: '#fff' };
+          
+          const locStr = location ? ` ${location}` : '';
+          const key = `${date}-${time}-${teamId}-specific-${rule.label}`;
+          
+          if (!eventsMap.has(key)) {
+            eventsMap.set(key, {
+              date,
+              time: time || '12:00',
+              label: rule.label + locStr,
+              teamId: teamId || 'specific',
+              teamName: team.name,
+              teamShort: team.short,
+              color: team.color,
+              textColor: team.textColor
+            });
+          }
+        }
+      });
+    }
+  }
+  
+  return Array.from(eventsMap.values());
+});
+
+const getTicketSalesForDay = (day) => {
+  const dateStr = getDateStr(day);
+  return ticketSalesEvents.value.filter(e => e.date === dateStr);
+};
+
+const daysWithItems = computed(() => {
+  const days = new Set();
+  for (let day = 1; day <= daysInMonth.value; day++) {
+    if (getGamesForDay(day).length > 0 || getTicketSalesForDay(day).length > 0) {
+      days.add(day);
+    }
+  }
+  return Array.from(days).sort((a, b) => a - b);
 });
 
 const formatDate = (d) => {

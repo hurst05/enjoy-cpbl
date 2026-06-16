@@ -2,12 +2,22 @@
 
 這份文件旨在幫助 AI 代理程式（如 Claude 或其他 LLM）以及開發者快速了解 `enjoy-cpbl` 的專案架構、技術棧、編碼風格以及開發規範。
 
+## 專案狀態與核心功能 (Project Status & Features)
+
+本專案目前處於**穩定階段**，已實作並上線以下主要功能：
+
+- **賽程與售票日曆**: 整合中職賽程與各球團售票資訊（支援動態過濾與自動去重標籤），並支援手機板清單與桌面板網格雙介面。
+- **啦啦隊班表過濾**: 可檢視每場賽事對應的女孩名單，並提供專屬條件過濾器。
+- **好友群組與個人標記**: 結合 Firebase 提供登入機制，可標記想看的賽事、加入好友群組共享意願，並支援一鍵匯出至 Google Calendar。
+- **後台管理 (Admin)**: 網頁端具備 UI，可讓管理員設定主題日、修改售票規則、手動更新賽程與班表。
+- **背景同步腳本**: 專案提供 Node.js 獨立腳本（利用 Puppeteer）進行賽程與啦啦隊班表資料的網路爬蟲與同步。
+
 ## 技術棧 (Tech Stack)
 
 - **前端框架**: Vue 3
 - **建置工具**: Vite
 - **程式語言**: JavaScript (ES6+), 無 TypeScript
-- **樣式**: Vanilla CSS (主要集中於 `src/style.css` 及 Vue 單一元件檔內的 `<style>`)，無使用 Tailwind CSS 或預處理器
+- **樣式**: SCSS (全域樣式集中於 `src/styles/` 目錄，各元件局部樣式於 Vue 單一元件檔內的 `<style lang="scss" scoped>`)，無使用 Tailwind CSS
 - **後端/資料庫**: Firebase (版本 12.14.0，包含 Auth, Firestore 等)
 - **網路爬蟲**: Puppeteer + jsdom (透過 Vite custom plugin 及前端發起請求進行中職賽程爬取)
 
@@ -22,7 +32,7 @@ enjoy-cpbl/
 │   ├── assets/         # 靜態資源 (圖片、圖示等)
 │   ├── App.vue         # 應用程式根元件
 │   ├── main.js         # Vue 應用程式進入點
-│   ├── style.css       # 全域 CSS 樣式
+│   ├── styles/         # 全域 SCSS 樣式模組 (變數、主題、排版等)
 │   └── firebase.js     # Firebase 初始化與設定
 ├── public/             # 靜態公開檔案
 ├── vite.config.js      # Vite 設定檔 (內含自訂的 cpbl-scraper plugin)
@@ -37,8 +47,8 @@ enjoy-cpbl/
     - 採用 Vue 3 單一元件檔 (`.vue`) 開發。
     - 遵循 Vue 3 Composition API（若專案中混用 Options API，開發新功能時建議以現有元件的風格為主）。
 3. **樣式**:
-    - 使用純 CSS。全域樣式請寫在 `src/style.css`。
-    - 元件特定樣式請寫在對應 `.vue` 檔的 `<style scoped>` 中。
+    - 使用 SCSS 預處理器。全域樣式已模組化並放置於 `src/styles/` 資料夾下，由 `main.scss` 統一引入。
+    - 元件特定樣式請寫在對應 `.vue` 檔的 `<style lang="scss" scoped>` 中。
 4. **檔案命名**:
     - Vue 元件使用 PascalCase (例如 `GameCard.vue`, `AuthModal.vue`)。
     - 一般 JS 檔案及工具函式使用 camelCase (例如 `scraper.js`, `defaultTeams.js`)。
@@ -50,6 +60,7 @@ enjoy-cpbl/
 1. **無自動化測試框架**: `package.json` 中並無配置 Jest、Vitest 或 Cypress 等標準測試框架。
 2. **單一測試腳本**: 專案根目錄下存在許多自訂的測試腳本（如 `test-auth.js`, `test-browser.js`, `test-data.js`），通常是用於本地端驗證特定邏輯或爬蟲功能。
 3. **測試方法**: 執行這些腳本時，通常使用 Node.js 直接運行（例：`node test-browser.js`），新增功能時，可建立類似的獨立腳本來驗證資料或 Firebase 連線。
+4. **測試腳本存放目錄**: 所有測試用或暫時性的腳本檔案，請統一放進 `_test-scripts-to-delete` 資料夾內，以利專案後續的維護與清理。
 
 ## 開發注意事項 (Development Notes)
 

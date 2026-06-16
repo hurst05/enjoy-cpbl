@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content modal-large">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <div id="modal-body">
@@ -172,6 +172,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'mark', 'game-updated']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 const isEditingTheme = ref(false);
 const editThemeText = ref('');

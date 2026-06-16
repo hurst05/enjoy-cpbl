@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" @click.self="handleOverlayClick">
     <div class="modal-content ticket-modal-content">
       <button class="modal-close" aria-label="關閉" @click="$emit('close')">✕</button>
       <h3>🎟️ 售票時程管理</h3>
@@ -111,6 +111,12 @@ import { getTicketSchedules, saveTicketScheduleGeneral, saveTicketScheduleSpecif
 import { TEAMS } from '../data/defaultTeams.js';
 
 const emit = defineEmits(['close', 'saved']);
+
+const handleOverlayClick = () => {
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 // Reverse map for UI display
 const TEAM_NAME_MAP_REVERSE = Object.entries(TEAMS).reduce((acc, [key, val]) => {
