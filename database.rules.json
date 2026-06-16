@@ -6,8 +6,11 @@
     "users": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+        "isAdmin": {
+          ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+        }
       }
     },
 
@@ -20,32 +23,34 @@
 
     "schedules": {
       ".read": true,
-      ".write": false 
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true" 
     },
     
     "themeDays": {
       ".read": true,
-      ".write": false
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
     },
 
     "cheerleaders": {
       ".read": true,
-      ".write": false
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
     },
 
     "groups": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      "$groupId": {
+        ".write": "auth != null"
+      }
     },
     
     "ticketSchedules": {
       ".read": true,
-      ".write": false
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
     },
     
     "lastSync": {
       ".read": true,
-      ".write": false
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
     }
   }
 }
