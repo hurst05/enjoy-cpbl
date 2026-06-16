@@ -98,6 +98,7 @@ const handleClose = async () => {
     tempGoogleUser.value = null;
     isGoogleSetupMode.value = false;
     googleNickname.value = '';
+    window.isLoggingInWithGoogle = false;
   }
   emit('close');
 };
@@ -132,11 +133,11 @@ const handleGoogleLogin = async () => {
   try {
     window.isLoggingInWithGoogle = true;
     const user = await loginWithGoogle();
-    window.isLoggingInWithGoogle = false;
     
     const profile = await getUserProfile(user.uid);
     if (profile && profile.displayName) {
       // Existing user
+      window.isLoggingInWithGoogle = false;
       emit('close');
     } else {
       // New user, setup nickname
@@ -170,6 +171,7 @@ const handleGoogleSetup = async () => {
     }
     await updateProfile(tempGoogleUser.value, { displayName: googleNickname.value });
     await setUserProfile(tempGoogleUser.value.uid, { displayName: googleNickname.value, marks: {} });
+    window.isLoggingInWithGoogle = false;
     emit('setup-complete');
     emit('close');
   } catch (err) {
