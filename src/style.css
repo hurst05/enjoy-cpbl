@@ -942,9 +942,14 @@ body {
 }
 
 .modal-close {
-  position: absolute;
-  top: 12px;
-  right: 14px;
+  position: sticky;
+  top: -12px;
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: -14px;
+  margin-top: -16px;
+  margin-bottom: -16px;
+  z-index: 100;
   width: 32px;
   height: 32px;
   border: none;
@@ -1110,6 +1115,52 @@ body {
   background: rgba(255, 127, 110, 0.08);
   border-color: var(--accent-coral);
   color: var(--accent-coral);
+}
+
+.modal-calendar-action {
+  width: 100%;
+}
+
+.btn-gcal-premium {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #4285F4 0%, #1a73e8 100%);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: var(--radius-btn);
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.25);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gcal-premium::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  transition: all 0.75s ease;
+}
+
+.btn-gcal-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(66, 133, 244, 0.4);
+  color: #ffffff;
+}
+
+.btn-gcal-premium:hover::before {
+  left: 150%;
+}
+
+.gcal-icon {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .modal-friends-row {
@@ -1561,6 +1612,40 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.cheerleader-label-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.external-reference-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-blue);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: rgba(77, 166, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.external-reference-link:hover {
+  background-color: var(--accent-blue);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(77, 166, 255, 0.2);
+}
+
+.external-reference-link .external-icon {
+  width: 12px;
+  height: 12px;
 }
 
 .filter-tags {

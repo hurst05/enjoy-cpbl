@@ -21,8 +21,8 @@
             </div>
           </div>
           <div class="modal-game-info">
-            <div class="modal-date-time">
-              📅 {{ game.date }} {{ game.dayOfWeek || '' }} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {{ game.time || '時間未定' }}
+            <div class="modal-date-time" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span>📅 {{ game.date }} {{ game.dayOfWeek || '' }} &nbsp;&nbsp;|&nbsp;&nbsp; ⏰ {{ game.time || '時間未定' }}</span>
             </div>
             <!-- Theme Day Section -->
             <div class="modal-theme-wrapper" style="margin-top: 8px;">
@@ -99,28 +99,40 @@
           </div>
         </div>
 
-        <!-- Marks Section -->
-        <div class="modal-section modal-marks" v-if="currentUser">
-          <div class="modal-section-title">📌 我的標記</div>
-          <div class="modal-mark-buttons">
-            <button 
-              class="btn-mark" 
-              :class="{ active: wantToWatch }"
-              @click="toggleWantToWatch"
-            >
-              {{ wantToWatch ? '❤️ 已標記想看' : '🤍 想看' }}
-            </button>
-            <button 
-              class="btn-mark" 
-              :class="{ active: ticketPurchased }"
-              @click="toggleTicketPurchased"
-            >
-              {{ ticketPurchased ? '✅ 已購票' : '🎟️ 標記已購票' }}
-            </button>
+        <!-- Marks & Calendar Section -->
+        <div class="modal-section modal-marks">
+          <div class="modal-section-title">📌 我的標記與日曆</div>
+          
+          <template v-if="currentUser">
+            <div class="modal-mark-buttons" style="margin-bottom: 12px;">
+              <button 
+                class="btn-mark" 
+                :class="{ active: wantToWatch }"
+                @click="toggleWantToWatch"
+              >
+                {{ wantToWatch ? '❤️ 已標記想看' : '🤍 想看' }}
+              </button>
+              <button 
+                class="btn-mark" 
+                :class="{ active: ticketPurchased }"
+                @click="toggleTicketPurchased"
+              >
+                {{ ticketPurchased ? '✅ 已購票' : '🎟️ 標記已購票' }}
+              </button>
+            </div>
+          </template>
+          <div class="modal-login-hint" style="margin-top: 12px;" v-else>
+            💡 登入後可標記「想看」或「已購票」
           </div>
-        </div>
-        <div class="modal-login-hint" v-else>
-          💡 登入後可標記「想看」或「已購票」
+
+          <div class="modal-calendar-action" style="margin-top: 12px;">
+            <a :href="googleCalendarUrl" target="_blank" rel="noopener noreferrer" class="btn-gcal-premium">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="gcal-icon">
+                 <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/>
+              </svg>
+              <span>加入 Google 日曆</span>
+            </a>
+          </div>
         </div>
 
         <!-- Friends Section -->
@@ -183,6 +195,36 @@ const saveThemeDay = async () => {
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
+
+const googleCalendarUrl = computed(() => {
+  const awayName = awayTeam.value.name || props.game.awayTeam;
+  const homeName = homeTeam.value.name || props.game.homeTeam;
+  const title = `[中華職棒] ${awayName} vs ${homeName}`;
+  const location = props.game.location || '';
+  
+  const time = (props.game.time && props.game.time !== 'TBD') ? props.game.time : '17:05';
+  const dStart = new Date(`${props.game.date}T${time}:00+08:00`);
+  const dEnd = new Date(dStart.getTime() + 4 * 60 * 60 * 1000);
+
+  const formatUrlTime = (d) => {
+    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+  
+  const dates = `${formatUrlTime(dStart)}/${formatUrlTime(dEnd)}`;
+  
+  let details = `中華職棒例行賽：${awayName} vs ${homeName}\n`;
+  if (props.game.gameNumber) details += `場次：${props.game.gameNumber}\n`;
+  if (props.game.themeDay) details += `主題日：${props.game.themeDay}\n`;
+
+  const url = new URL('https://calendar.google.com/calendar/render');
+  url.searchParams.append('action', 'TEMPLATE');
+  url.searchParams.append('text', title);
+  url.searchParams.append('dates', dates);
+  url.searchParams.append('details', details);
+  url.searchParams.append('location', location);
+  
+  return url.toString();
+});
 
 const ticketRulesList = computed(() => {
   if (!props.game.gameNumber || props.game.gameNumber <= 180) {
