@@ -219,11 +219,13 @@ export async function getGroupMarks(groups) {
 
 export async function loginAsUser(username) {
   let email = `${username}@enjoy-cpbl.local`;
+  let userExists = false;
   
   // Try to find if user has a stored real email
   try {
     const snap = await get(ref(db, `usernames/${username}`));
     if (snap.exists()) {
+      userExists = true;
       const data = snap.val();
       if (data.email) {
         email = data.email;
@@ -239,7 +241,10 @@ export async function loginAsUser(username) {
     return cred.user;
   } catch (err) {
     if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-      throw new Error('此帳號已設定為需要 Google 登入驗證，請使用 Google 登入');
+      if (userExists) {
+        throw new Error('此帳號已設定為需要 Google 登入驗證，請使用 Google 登入');
+      }
+      // 如果資料庫沒這個人，代表其實是「帳號不存在」，不應該丟出密碼錯誤，而是繼續往下走註冊流程
     }
     // If sign in fails, attempt to create the user
     try {
