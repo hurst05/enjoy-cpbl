@@ -93,9 +93,16 @@
         <!-- Ticket Schedule Section -->
         <div class="modal-section" v-if="ticketRulesList.length > 0">
           <div class="modal-section-title">🎟️ 售票時程</div>
-          <div v-for="(rule, idx) in ticketRulesList" :key="idx" class="modal-friends-row" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span class="friends-label" style="font-weight: 600; width: 60%;">{{ rule.label }}</span>
-            <span style="color: var(--text-secondary); font-size: 0.9em;">{{ rule.dateStr }}</span>
+          <div v-for="(rule, idx) in ticketRulesList" :key="idx" class="modal-friends-row" style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center;">
+            <span class="friends-label" style="font-weight: 600; flex-grow: 1;">{{ rule.label }}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: var(--text-secondary); font-size: 0.9em;">{{ rule.dateStr }}</span>
+              <a v-if="rule.originalDate" :href="getTicketGcalUrl(rule)" target="_blank" rel="noopener noreferrer" title="加入 Google 日曆" style="color: var(--text-secondary); display: inline-flex; align-items: center; text-decoration: none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="transition: color 0.2s;">
+                   <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/>
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
 
@@ -255,9 +262,43 @@ const ticketRulesList = computed(() => {
       const d = new Date(rule.date);
       dateStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     }
-    return { label: rule.label, dateStr };
+    return { label: rule.label, dateStr, originalDate: rule.date };
+  }).sort((a, b) => {
+    if (!a.originalDate && !b.originalDate) return 0;
+    if (!a.originalDate) return 1;
+    if (!b.originalDate) return -1;
+    return new Date(a.originalDate) - new Date(b.originalDate);
   });
 });
+
+const getTicketGcalUrl = (rule) => {
+  if (!rule.originalDate) return '#';
+  
+  const awayName = awayTeam.value.name || props.game.awayTeam;
+  const homeName = homeTeam.value.name || props.game.homeTeam;
+  const title = `[售票] ${awayName} vs ${homeName} - ${rule.label}`;
+  
+  const dStart = new Date(rule.originalDate);
+  const dEnd = new Date(dStart.getTime() + 15 * 60 * 1000);
+
+  const formatUrlTime = (d) => {
+    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+  
+  const dates = `${formatUrlTime(dStart)}/${formatUrlTime(dEnd)}`;
+  
+  let details = `中華職棒售票：${awayName} vs ${homeName}\n`;
+  details += `售票階段：${rule.label}\n`;
+  if (props.game.gameNumber) details += `場次：${props.game.gameNumber}\n`;
+
+  const url = new URL('https://calendar.google.com/calendar/render');
+  url.searchParams.append('action', 'TEMPLATE');
+  url.searchParams.append('text', title);
+  url.searchParams.append('dates', dates);
+  url.searchParams.append('details', details);
+  
+  return url.toString();
+};
 
 const marks = computed(() => props.userMarks?.[props.game.gameId] || {});
 const wantToWatch = computed(() => marks.value.wantToWatch);
