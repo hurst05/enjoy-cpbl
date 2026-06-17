@@ -808,6 +808,7 @@
   z-index: 100;
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   border: none;
   background: var(--bg-hover);
   border-radius: 50%;
@@ -1225,7 +1226,6 @@
 
 /* ===== Mobile List View ===== */
 .list-container {
-  display: none;
   max-width: 600px;
   margin: 0 auto;
   padding: 0 16px 40px;
