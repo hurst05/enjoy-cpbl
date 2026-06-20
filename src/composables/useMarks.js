@@ -16,11 +16,8 @@ export function useMarks() {
       const marks = await getUserMarks(user.uid);
       userMarks.value = marks || {};
 
-      if (profile?.groups) {
-        await loadGroupData(profile.groups);
-      } else {
-        groupMarks.value = {};
-      }
+      // 預設僅查詢使用者自身的標記資料
+      groupMarks.value = {};
     } catch (e) {
       console.error('載入標記資料失敗:', e);
     }

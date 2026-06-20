@@ -190,8 +190,10 @@
       :userMarks="userMarks"
       :cheerleaderData="cheerleaderData"
       :groupMarks="groupMarks"
+      :userProfile="userProfile"
       @close="showMyMarksModal = false"
       @game-click="handleGameClick"
+      @load-group-data="loadGroupData"
     />
 
     <TicketScheduleModal
