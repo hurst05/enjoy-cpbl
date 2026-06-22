@@ -26,8 +26,11 @@
           <label class="select-all-label">
             <input type="checkbox" @change="toggleAll" :checked="isAllSelected" /> 全選
           </label>
+          <button class="btn-export btn-csv" @click="exportToCSV" :disabled="selectedGames.length === 0">
+            匯出至 Excel (.csv)
+          </button>
           <button class="btn-export" @click="exportToICS" :disabled="selectedGames.length === 0">
-            匯出所選至日曆 (.ics)
+            匯出至日曆 (.ics)
           </button>
         </div>
       </div>
@@ -294,7 +297,7 @@ function formatICSTime(dateStr, timeStr, addHours = 0) {
 }
 
 function exportToICS() {
-  const selected = sortedGames.value.filter(g => selectedGames.value.includes(g.gameId));
+  const selected = sortedGames.value.filter(g => selectedGames.value.includes(g.game.gameId));
   if (selected.length === 0) return;
 
   let icsContent = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Enjoy CPBL//EN\r\n";
@@ -325,6 +328,71 @@ function exportToICS() {
   const link = document.createElement('a');
   link.href = url;
   link.setAttribute('download', 'cpbl-schedule.ics');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportToCSV() {
+  const selected = sortedGames.value.filter(g => selectedGames.value.includes(g.game.gameId));
+  if (selected.length === 0) return;
+
+  // Add BOM for Excel UTF-8 compatibility
+  let csvContent = '\uFEFF';
+  csvContent += '日期,時間,客隊,主隊,場地,個人標記,群友標記\n';
+
+  selected.forEach(item => {
+    const game = item.game;
+    const gameId = game.gameId;
+    const date = `${game.date} (${getDowName(game.date)})`;
+    const time = game.time || 'TBD';
+    const away = getTeamName(game.awayTeam);
+    const home = getTeamName(game.homeTeam);
+    const location = game.location || '';
+    
+    let markStr = '';
+    if (props.userMarks && props.userMarks[gameId]) {
+      if (props.userMarks[gameId].ticketPurchased) markStr = '✅已買票';
+      else if (props.userMarks[gameId].wantToWatch) markStr = '❤️想看';
+    }
+    
+    const allMembers = [];
+    if (props.userMarks && props.userMarks[gameId]) {
+      const m = props.userMarks[gameId];
+      if (m.wantToWatch || m.ticketPurchased) {
+        allMembers.push(`自己(${m.ticketPurchased ? '✅' : '❤️'})`);
+      }
+    }
+    
+    if (props.groupMarks) {
+      for (const uid in props.groupMarks) {
+        const gm = props.groupMarks[uid].marks && props.groupMarks[uid].marks[gameId];
+        if (gm && (gm.wantToWatch || gm.ticketPurchased)) {
+          allMembers.push(`${props.groupMarks[uid].displayName}(${gm.ticketPurchased ? '✅' : '❤️'})`);
+        }
+      }
+    }
+
+    const membersStr = allMembers.join(' / ');
+
+    const row = [
+      `"${date}"`,
+      `"${time}"`,
+      `"${away}"`,
+      `"${home}"`,
+      `"${location}"`,
+      `"${markStr}"`,
+      `"${membersStr}"`
+    ].join(',');
+    
+    csvContent += row + '\n';
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'cpbl-marks.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -383,6 +451,10 @@ function exportToICS() {
 
 .btn-export:hover:not(:disabled) {
   opacity: 0.8;
+}
+
+.btn-csv {
+  background-color: #4CAF50;
 }
 
 .marks-list-container {
