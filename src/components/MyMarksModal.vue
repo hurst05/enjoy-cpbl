@@ -333,8 +333,8 @@ function exportToICS() {
 
 <style scoped>
 .modal-large {
-  max-width: 600px;
-  width: 90%;
+  max-width: 1200px;
+  width: 60%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -544,6 +544,10 @@ function exportToICS() {
   }
   .hide-on-desktop {
     display: flex !important;
+  }
+  .modal-large {
+    width: 90%;
+    max-width: 600px;
   }
 }
 </style>
