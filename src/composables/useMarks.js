@@ -16,8 +16,12 @@ export function useMarks() {
       const marks = await getUserMarks(user.uid);
       userMarks.value = marks || {};
 
-      // 預設僅查詢使用者自身的標記資料
-      groupMarks.value = {};
+      // 自動載入群友的標記資料，讓主畫面卡片可以直接顯示
+      if (profile && profile.groups && Object.keys(profile.groups).length > 0) {
+        await loadGroupData(profile.groups);
+      } else {
+        groupMarks.value = {};
+      }
     } catch (e) {
       console.error('載入標記資料失敗:', e);
     }
