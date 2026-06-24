@@ -1,5 +1,9 @@
 import { JSDOM } from 'jsdom';
 import * as fb from '../src/firebase.js';
+import {
+  normalizeCheerleaderName,
+  normalizeCheerleaderRecord,
+} from './cheerleaderName.js';
 
 const adminPassword = process.env.ADMIN_PASSWORD || '5566';
 const forceUpdate = process.argv.includes('--force');
@@ -25,8 +29,8 @@ async function fetchCheerleaderPage(path) {
     memberCards.forEach((h3) => {
       const fullText = h3.textContent.trim();
       const nameMatch = fullText.match(/^(.+?)\s*\(/);
-      if (nameMatch) members.push(nameMatch[1].trim());
-      else members.push(fullText);
+      const rawName = nameMatch ? nameMatch[1] : fullText;
+      members.push(normalizeCheerleaderName(rawName));
     });
     return members;
   } catch (e) {
@@ -39,12 +43,33 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function normalizeExistingCheerleaders() {
+  const cheerleaders = await fb.getAllCheerleaders();
+  if (!cheerleaders) return 0;
+
+  let updatedCount = 0;
+
+  for (const [gameId, record] of Object.entries(cheerleaders)) {
+    const normalizedRecord = normalizeCheerleaderRecord(record);
+    if (JSON.stringify(normalizedRecord) === JSON.stringify(record)) continue;
+
+    await fb.saveCheerleaders(gameId, normalizedRecord);
+    updatedCount++;
+  }
+
+  return updatedCount;
+}
+
 async function runScraper() {
   console.log('=== 開始執行啦啦隊班表同步腳本 ===');
   try {
     console.log('1. 以管理員身分登入 Firebase...');
     await fb.loginAsAdmin(adminPassword);
     console.log('登入成功！');
+
+    console.log('\n2. 正規化 Firebase 既有啦啦隊名字...');
+    const normalizedCount = await normalizeExistingCheerleaders();
+    console.log(`已更新 ${normalizedCount} 場既有班表`);
 
     const lastSync = await fb.getLastSync();
     const now = Date.now();
@@ -55,7 +80,7 @@ async function runScraper() {
       process.exit(0);
     }
 
-    console.log('\n2. 讀取現有賽程資料...');
+    console.log('\n3. 讀取現有賽程資料...');
     const scheduleData = await fb.getSchedules();
     if (!scheduleData) {
       console.error('❌ 找不到賽程資料，請先執行 npm run sync-schedules');
