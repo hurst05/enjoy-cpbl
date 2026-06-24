@@ -26,14 +26,19 @@ JSON export; never read from or write to Firebase.
 6. Inspect the image at original detail when possible. Verify the team brand,
    extract the printed date, and transcribe member labels using the selected
    reference. Read labels; do not identify people from their faces.
-7. Apply every validation rule below. If any rule fails, do not create or
-   modify an export file. State the uncertain field and candidates, then ask
-   for confirmation.
+7. Apply every validation rule below. When a readable label is absent from the
+   selected profile's verified-name allowlist, ask the user to confirm its
+   exact spelling. After confirmation, add it to that allowlist before
+   producing JSON. For any other failed rule, do not create or modify an
+   export file; state the uncertain field and candidates, then ask for
+   confirmation.
 8. When all checks pass, create `doc/exportCheerSchedule` under the repository
    root if it does not exist. Write the output contract below as UTF-8 JSON to
    `doc/exportCheerSchedule/{date}_{homeTeam}.json`, using two-space indentation
    and a final newline. Replace an existing file for the same date and team.
-9. Return a concise confirmation with the created file path.
+9. Return a concise confirmation with the created file path, followed by a
+   fenced `json` code block containing the complete JSON exactly as written to
+   the file. Do not summarize, truncate, or reorder the displayed content.
 
 ## Validation Rules
 
@@ -42,6 +47,8 @@ JSON export; never read from or write to Firebase.
 - Normalize the date to `YYYY-MM-DD` and ignore every printed time.
 - Preserve member order from top to bottom and left to right within each row.
 - Require the number of readable member labels to match the visible portraits.
+- Treat the verified-name allowlist only as a spelling-validation set. Never
+  compare its total size with the number of labels or portraits in an image.
 - Reject duplicate, unreadable, or unverified member names.
 - Ignore opponents, matchup text, venue, game identifiers, and all Firebase
   metadata.

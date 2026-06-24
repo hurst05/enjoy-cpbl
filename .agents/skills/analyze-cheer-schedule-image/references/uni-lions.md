@@ -44,12 +44,16 @@ Accept only names confirmed through reviewed Uni-Girls samples:
 - 安琪
 - 妍蓁
 
+Treat this list only as a set of verified spellings. Its size does not describe
+how many members should appear in any schedule image. Never compare the number
+of entries in this list with the number of parsed labels or visible portraits.
+
 Treat similar-looking text as uncertain. In particular, preserve `培根`
 exactly; do not replace it with a visually guessed alternative. When a new
-name appears, ask the user for the exact spelling before producing JSON. Add
-the name to this list only in a later explicit skill update.
+name appears, ask the user for the exact spelling. After the user confirms it,
+add the confirmed spelling to this list, then continue producing JSON.
 
 ## Confirmed Example
 
-For the reviewed `2026.07.01` image, output the date as `2026-07-01` and the
-13 names above in their listed order.
+For a reviewed `2026.07.01` image, output the date as `2026-07-01`. Determine
+the ordered names from that image; do not infer attendance from this allowlist.
