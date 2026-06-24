@@ -1,0 +1,4 @@
+interface:
+  display_name: "分析啦啦隊班表圖片"
+  short_description: "依隊伍專屬規則解析班表圖片並寫入專案 JSON 匯出檔案"
+  default_prompt: "使用 $analyze-cheer-schedule-image 解析這張統一獅班表圖片並寫入 JSON 匯出檔。"
