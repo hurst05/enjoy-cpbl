@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "sync-schedules": "node scripts/sync-schedules.js",
-    "sync-cheerleaders": "node scripts/sync-cheerleaders.js"
+    "sync-cheerleaders": "node scripts/sync-cheerleaders.js",
+    "import-cheerleaders": "node scripts/import-cheerleaders-from-files.js"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",
