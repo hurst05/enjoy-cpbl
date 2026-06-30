@@ -27,3 +27,4 @@ dist-ssr
 # Agents
 /.agent/
 /.codex/
+skills-lock.json
