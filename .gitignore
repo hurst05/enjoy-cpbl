@@ -29,3 +29,7 @@ dist-ssr
 /.codex/
 skills-lock.json
 /.codegraph/
+
+# PNPM
+pnpm-lock.yaml
+pnpm-workspace.yaml

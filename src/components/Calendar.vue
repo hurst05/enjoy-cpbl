@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue';
 import GameCard from './GameCard.vue';
 import { TEAMS } from '../data/defaultTeams.js';
 
@@ -105,11 +105,34 @@ const currentMonth = ref(5);
 const holidays = ref({});
 const isMobile = ref(false);
 
-const goToToday = () => {
+const goToToday = async () => {
   const now = new Date();
   currentYear.value = now.getFullYear();
   currentMonth.value = now.getMonth();
   loadHolidays(currentYear.value);
+
+  await nextTick();
+
+  if (isMobile.value) {
+    const todayEl = document.querySelector('.list-day-today');
+    const mainContent = document.querySelector('.main-content');
+    if (todayEl && mainContent) {
+      const headerOffset = 110;
+      const elementPosition = todayEl.getBoundingClientRect().top;
+      const mainPosition = mainContent.getBoundingClientRect().top;
+      const offsetPosition = elementPosition - mainPosition + mainContent.scrollTop - headerOffset;
+      
+      mainContent.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  } else {
+    const todayCell = document.querySelector('.calendar-cell-today');
+    if (todayCell) {
+      todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
 };
 
 const changeMonth = (delta) => {

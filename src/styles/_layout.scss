@@ -240,7 +240,12 @@
   }
 
   .month-nav {
-    padding: 0 16px;
+    padding: 10px 16px;
+    position: sticky;
+    top: 46px;
+    z-index: 99;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-light);
   }
 
   .month-label {
