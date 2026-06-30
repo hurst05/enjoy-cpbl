@@ -28,3 +28,4 @@ dist-ssr
 /.agent/
 /.codex/
 skills-lock.json
+/.codegraph/
