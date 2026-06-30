@@ -1,6 +1,6 @@
 ---
 name: analyze-cheer-schedule-image
-description: Analyze CPBL cheerleader schedule images with team-specific visual rules and write JSON exports containing each date, canonical home-team code and name, and ordered home-member names. Use whenever a user provides one or more cheer schedule images plus a home-team name and asks to extract, transcribe, convert, export, or prepare cheerleader schedule data. Supports Uni-Girls for the Uni-Lions and Wing Stars for the TSG Hawks.
+description: Analyze CPBL cheerleader schedule images with team-specific visual rules and write JSON exports containing each date, canonical home-team code and name, and ordered home-member names. Use whenever a user provides one or more cheer schedule images plus a home-team name and asks to extract, transcribe, convert, export, or prepare cheerleader schedule data. Supports Passion Sisters for the CTBC Brothers, Uni-Girls for the Uni-Lions, and Wing Stars for the TSG Hawks.
 ---
 
 # Analyze Cheer Schedule Image
@@ -20,7 +20,8 @@ local JSON exports; never read from or write to Firebase.
 4. Resolve `homeTeamName` from `TEAMS[homeTeam].name`. Never use the supplied
    alias as the canonical output name.
 5. Select and read only the reference matching the resolved team code:
-   [references/uni-lions.md](references/uni-lions.md) for `T5` or
+   [references/passion-sisters.md](references/passion-sisters.md) for `T1`,
+   [references/uni-lions.md](references/uni-lions.md) for `T5`, or
    [references/tsg-hawks.md](references/tsg-hawks.md) for `T6`. For any other
    resolved team, explain that its image profile is not implemented and ask
    for representative images plus a user-confirmed ordered member list.

@@ -1,7 +1,15 @@
+const CHEERLEADER_NAME_CORRECTIONS = {
+  邊荷律: '荷律',
+  瑄瑄: '瑄',
+  金渡兒: '渡兒',
+};
+
 export function normalizeCheerleaderName(name) {
   if (typeof name !== 'string') return name;
 
-  return name.trim().split(/\s+/u)[0];
+  const normalizedName = name.trim().split(/\s+/u)[0];
+
+  return CHEERLEADER_NAME_CORRECTIONS[normalizedName] ?? normalizedName;
 }
 
 export function normalizeCheerleaderRecord(record) {
