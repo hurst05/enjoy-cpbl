@@ -79,6 +79,14 @@ async function scrapeCpblSchedules() {
       const dateStr = `${y}-${m}-${d}`;
       const dayOfWeek = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'][dateObj.getDay()];
 
+      const originalDateObj = new Date(originalGame.GameDate);
+      const originalY = originalDateObj.getFullYear();
+      const originalM = String(originalDateObj.getMonth() + 1).padStart(2, '0');
+      const originalD = String(originalDateObj.getDate()).padStart(2, '0');
+      const originalDateActualStr = `${originalY}-${originalM}-${originalD}`;
+      const originalDayOfWeek = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'][originalDateObj.getDay()];
+      const originalLocation = originalGame.FieldAbbe || '';
+
       let time = '';
       if (g.GameDateTimeS) {
          const tDate = new Date(g.GameDateTimeS);
@@ -106,11 +114,7 @@ async function scrapeCpblSchedules() {
 
       if (originalGame && originalGame.GameDate !== activeGame.GameDate) {
         isPostponed = true;
-        const origD = new Date(originalGame.GameDate);
-        const origY = origD.getFullYear();
-        const origM = String(origD.getMonth() + 1).padStart(2, '0');
-        const origDd = String(origD.getDate()).padStart(2, '0');
-        originalDateStr = `${origY}-${origM}-${origDd}`;
+        originalDateStr = originalDateActualStr;
         originalCheerPath = validTeams.includes(homeTeam) ? `/${originalDateStr}/${homeTeam}` : null;
       }
 
@@ -119,7 +123,8 @@ async function scrapeCpblSchedules() {
         location: g.FieldAbbe || '', gameNumber: g.GameSno,
         cpblLink: `https://www.cpbl.com.tw/box?year=${y}&kindCode=${g.KindCode}&gameSno=${g.GameSno}`,
         cheerDetailPath: cheerPath, isPostponed, originalDate: originalDateStr,
-        originalCheerPath, themeDay: null, status: g.GameResult === '0' ? 'normal' : 'finished',
+        originalLocation, originalDayOfWeek, originalCheerPath,
+        themeDay: null, status: g.GameResult === '0' ? 'normal' : 'finished',
       });
     } catch (err) {
       console.warn('解析賽事失敗', err);

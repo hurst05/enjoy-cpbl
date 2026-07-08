@@ -85,6 +85,20 @@ export async function saveTicketScheduleSpecific(gameId, rules) {
   await set(ref(db, `ticketSchedules/gameSpecific/${gameId}`), rules);
 }
 
+// ===== Rest Seats =====
+
+export async function getRestSeats() {
+  const snapshot = await get(ref(db, 'restSeats'));
+  return snapshot.val() || {};
+}
+
+export async function saveRestSeat(gameId, members) {
+  await set(ref(db, `restSeats/${gameId}`), {
+    members,
+    updatedAt: Date.now(),
+  });
+}
+
 
 export async function getAllCheerleaders() {
   const snapshot = await get(ref(db, 'cheerleaders'));

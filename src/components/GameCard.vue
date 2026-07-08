@@ -42,8 +42,6 @@
         <div class="tooltip-card" v-html="cheerTooltipHtml"></div>
       </span>
 
-
-
       <!-- User Marks -->
       <span v-if="markData?.wantToWatch" class="game-mark-icon mark-want" title="想看">❤️</span>
       <span v-if="markData?.ticketPurchased" class="game-mark-icon mark-ticket" title="已購票">✅</span>
@@ -76,6 +74,7 @@
 <script setup>
 import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
+import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 
 const props = defineProps({
   game: Object,
@@ -84,6 +83,7 @@ const props = defineProps({
   userMarks: Object,
   groupMarks: Object,
   ticketRules: Object,
+  restSeatData: Object,
   isAdmin: Boolean,
   isFilterActive: Boolean,
   isMatched: Boolean
@@ -92,15 +92,31 @@ const props = defineProps({
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const markData = computed(() => props.userMarks?.[props.game.gameId]);
+const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
 
 const hasCheerData = computed(() => {
-  const cheers = props.cheerleaderData?.[props.game.gameId];
-  return cheers && (cheers.homeMembers?.length > 0 || cheers.awayMembers?.length > 0);
+  return cheers.value && (cheers.value.homeMembers?.length > 0 || cheers.value.awayMembers?.length > 0);
+});
+
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
+const restSeatDisplay = computed(() => {
+  if (!isRestSeatGame(props.game)) return null;
+
+  return getRestSeatDisplay(
+    props.game.gameId,
+    cheers.value?.homeMembers || [],
+    props.restSeatData,
+  );
 });
 
 const cheerTooltipHtml = computed(() => {
-  const cheers = props.cheerleaderData?.[props.game.gameId];
-  if (!cheers) return '<div class="tooltip-empty">尚無班表資料</div>';
+  if (!cheers.value) return '<div class="tooltip-empty">尚無班表資料</div>';
 
   let html = `<div class="tooltip-title">
       <svg viewBox="0 0 24 24" width="1.3em" height="1.3em" fill="var(--accent-coral)" color="var(--accent-coral)" style="display: inline-flex; align-items: center; justify-content: center; vertical-align: text-bottom; margin-right: 4px;">
@@ -109,18 +125,24 @@ const cheerTooltipHtml = computed(() => {
         <path d="M 12 17.5 C 12 17.5, 6 13, 6 8.5 C 6 6, 7.5 4.5, 9.5 4.5 C 10.8 4.5, 11.6 5.2, 12 6 C 12.4 5.2, 13.2 4.5, 14.5 4.5 C 16.5 4.5, 18 6, 18 8.5 C 18 13, 12 17.5, 12 17.5 Z" fill="var(--bg-card)" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
       </svg>
       啦啦隊應援
-      ${cheers.isFallback ? '<span style="font-size: 0.8em; color: var(--text-secondary); margin-left: 4px; font-weight: normal;">(顯示原訂日期班表)</span>' : ''}
+      ${cheers.value.isFallback ? '<span style="font-size: 0.8em; color: var(--text-secondary); margin-left: 4px; font-weight: normal;">(顯示原訂日期班表)</span>' : ''}
     </div>`;
-  if (cheers.homeMembers?.length) {
+  if (cheers.value.homeMembers?.length) {
     html += `<div class="tooltip-section">
-      <div class="tooltip-team" style="color:${homeTeam.value.color}">${homeTeam.value.cheerName || homeTeam.value.name || '主場'}</div>
-      <div class="tooltip-members">${cheers.homeMembers.join('、')}</div>
+      <div class="tooltip-team" style="color:${escapeHtml(homeTeam.value.color)}">${escapeHtml(homeTeam.value.cheerName || homeTeam.value.name || '主場')}</div>
+      <div class="tooltip-members">${cheers.value.homeMembers.map(escapeHtml).join('、')}</div>
     </div>`;
   }
-  if (cheers.awayMembers?.length) {
+  if (cheers.value.awayMembers?.length) {
     html += `<div class="tooltip-section">
-      <div class="tooltip-team" style="color:${awayTeam.value.color}">${awayTeam.value.cheerName || awayTeam.value.name || '客場'}</div>
-      <div class="tooltip-members">${cheers.awayMembers.join('、')}</div>
+      <div class="tooltip-team" style="color:${escapeHtml(awayTeam.value.color)}">${escapeHtml(awayTeam.value.cheerName || awayTeam.value.name || '客場')}</div>
+      <div class="tooltip-members">${cheers.value.awayMembers.map(escapeHtml).join('、')}</div>
+    </div>`;
+  }
+  if (restSeatDisplay.value) {
+    html += `<div class="tooltip-section">
+      <div class="tooltip-team"> ${escapeHtml(restSeatDisplay.value.label)}</div>
+      <div class="tooltip-members">${restSeatDisplay.value.members.length ? restSeatDisplay.value.members.map(escapeHtml).join('、') : '尚無可顯示名單'}</div>
     </div>`;
   }
   return html;

@@ -1,10 +1,11 @@
 import { ref } from 'vue';
-import { getSchedules, getThemeDays, getAllCheerleaders, getTicketSchedules } from '../firebase.js';
+import { getSchedules, getThemeDays, getAllCheerleaders, getTicketSchedules, getRestSeats } from '../firebase.js';
 
 export function useSchedules() {
   const scheduleData = ref({});
   const cheerleaderData = ref({});
   const ticketRules = ref({});
+  const restSeatData = ref({});
   const isMounted = ref(false);
 
   async function loadTicketRules() {
@@ -13,6 +14,14 @@ export function useSchedules() {
       ticketRules.value = schedules || {};
     } catch (e) {
       console.error('載入售票時程失敗:', e);
+    }
+  }
+
+  async function loadRestSeats() {
+    try {
+      restSeatData.value = await getRestSeats() || {};
+    } catch (e) {
+      console.error('載入歇歇席資料失敗:', e);
     }
   }
 
@@ -29,6 +38,7 @@ export function useSchedules() {
 
       const allCheers = await getAllCheerleaders() || {};
       cheerleaderData.value = allCheers;
+      await loadRestSeats();
       isMounted.value = true;
     } catch (e) {
       console.error('載入賽程資料失敗:', e);
@@ -44,8 +54,10 @@ export function useSchedules() {
     scheduleData,
     cheerleaderData,
     ticketRules,
+    restSeatData,
     isMounted,
     loadTicketRules,
+    loadRestSeats,
     loadScheduleData,
     initSchedules
   };

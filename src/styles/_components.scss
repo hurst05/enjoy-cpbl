@@ -946,6 +946,11 @@
   box-shadow: 0 0 8px rgba(255, 200, 87, 0.6);
 }
 
+.cheer-member-rest-seat {
+  background: color-mix(in srgb, var(--accent-yellow) 32%, var(--bg-hover));
+  color: var(--text-primary);
+}
+
 .modal-mark-buttons {
   display: flex;
   gap: 10px;

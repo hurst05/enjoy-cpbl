@@ -77,6 +77,18 @@
               >{{ member }}</span>
             </div>
           </div>
+
+          <div v-if="restSeatDisplay" class="modal-cheer-group">
+            <div class="modal-cheer-team">🪑 {{ restSeatDisplay.label }}</div>
+            <div class="modal-cheer-members">
+              <span
+                v-for="member in restSeatDisplay.members"
+                :key="member"
+                class="cheer-member cheer-member-rest-seat"
+              >{{ member }}</span>
+              <span v-if="restSeatDisplay.members.length === 0" class="modal-empty">尚無可顯示名單</span>
+            </div>
+          </div>
         </div>
         <div class="modal-section" v-else>
           <div class="modal-section-title">
@@ -163,6 +175,7 @@
 import { ref, computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { updateThemeDay } from '../firebase.js';
+import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 
 const props = defineProps({
   game: Object,
@@ -171,6 +184,7 @@ const props = defineProps({
   groupMarks: Object,
   currentUser: Object,
   ticketRules: Object,
+  restSeatData: Object,
   isAdmin: Boolean,
   highlightCheerMembers: {
     type: Array,
@@ -208,6 +222,15 @@ const saveThemeDay = async () => {
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
+const restSeatDisplay = computed(() => {
+  if (!isRestSeatGame(props.game)) return null;
+
+  return getRestSeatDisplay(
+    props.game.gameId,
+    cheers.value?.homeMembers || [],
+    props.restSeatData,
+  );
+});
 
 const googleCalendarUrl = computed(() => {
   const awayName = awayTeam.value.name || props.game.awayTeam;

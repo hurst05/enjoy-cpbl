@@ -41,6 +41,7 @@
               :userMarks="userMarks"
               :groupMarks="groupMarks"
               :ticketRules="ticketRules"
+              :restSeatData="restSeatData"
               :isAdmin="isAdmin"
               :isFilterActive="isFilterActive"
               :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
@@ -72,6 +73,7 @@
           :userMarks="userMarks"
           :groupMarks="groupMarks"
           :ticketRules="ticketRules"
+          :restSeatData="restSeatData"
           :isAdmin="isAdmin"
           :isFilterActive="isFilterActive"
           :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
@@ -93,6 +95,7 @@ const props = defineProps({
   userMarks: Object,
   groupMarks: Object,
   ticketRules: Object,
+  restSeatData: Object,
   isAdmin: Boolean,
   isFilterActive: Boolean,
   matchedGameIds: Object

@@ -28,6 +28,9 @@
             <button class="btn-sync btn-full" title="管理售票時程" @click="showTicketScheduleModal = true; isMobileMenuOpen = false">
               🎟️ 售票時程管理
             </button>
+            <button class="btn-sync btn-full" title="歇歇席管理" @click="showRestSeatModal = true; isMobileMenuOpen = false">
+              🪑 歇歇席管理
+            </button>
           </div>
         </div>
 
@@ -142,6 +145,7 @@
         :userMarks="userMarks" 
         :groupMarks="groupMarks"
         :ticketRules="ticketRules"
+        :restSeatData="restSeatData"
         :isAdmin="isAdmin"
         :isFilterActive="isFilterActive"
         :matchedGameIds="matchedGameIds"
@@ -158,6 +162,7 @@
       :groupMarks="groupMarks"
       :currentUser="currentUser"
       :ticketRules="ticketRules"
+      :restSeatData="restSeatData"
       :isAdmin="isAdmin"
       :highlightCheerMembers="filters.cheerMembers"
       @close="closeGameModal"
@@ -202,6 +207,15 @@
       @saved="loadTicketRules"
     />
 
+    <RestSeatModal
+      v-if="showRestSeatModal"
+      :scheduleData="scheduleData"
+      :cheerleaderData="cheerleaderData"
+      :restSeatData="restSeatData"
+      @close="showRestSeatModal = false"
+      @saved="loadRestSeats"
+    />
+
     <AdminUsersModal v-if="showAdminUsersModal" @close="showAdminUsersModal = false" />
 
   </div>
@@ -215,6 +229,7 @@ import AuthModal from './components/AuthModal.vue';
 import GroupPanel from './components/GroupPanel.vue';
 import ThemeDayModal from './components/ThemeDayModal.vue';
 import TicketScheduleModal from './components/TicketScheduleModal.vue';
+import RestSeatModal from './components/RestSeatModal.vue';
 import AdminUsersModal from './components/AdminUsersModal.vue';
 import MyMarksModal from './components/MyMarksModal.vue';
 
@@ -231,7 +246,7 @@ const { userMarks, groupMarks, loadUserMarksData, loadGroupData, handleMark } = 
 const { currentUser, userProfile, isAdmin, isGoogleLinked, initAuth, handleLogout, handleLinkGoogle, handleUnlinkGoogle, loadUserData } = useAuth(loadUserMarksData);
 
 // 3. 初始化賽程
-const { scheduleData, cheerleaderData, ticketRules, isMounted, loadTicketRules, loadScheduleData, initSchedules } = useSchedules();
+const { scheduleData, cheerleaderData, ticketRules, restSeatData, isMounted, loadTicketRules, loadRestSeats, loadScheduleData, initSchedules } = useSchedules();
 
 // 4. 初始化篩選器
 const {
@@ -251,6 +266,7 @@ const showAuthModal = ref(false);
 const showGroupPanel = ref(false);
 const showThemeDayModal = ref(false);
 const showTicketScheduleModal = ref(false);
+const showRestSeatModal = ref(false);
 const showAdminUsersModal = ref(false);
 const showMyMarksModal = ref(false);
 const showAdminMenu = ref(false);
