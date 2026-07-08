@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG Icon Fixture</title>
+  <style>
+    body {
+      color: #d94f2f;
+      font-family: sans-serif;
+    }
+
+    #app {
+      display: flex;
+      gap: 16px;
+      padding: 24px;
+    }
+
+    .fixture-icon {
+      background: #fff;
+      color: currentColor;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createApp, h } from 'vue';
+    import SvgIcon from '/src/components/SvgIcon.vue';
+
+    createApp({
+      render() {
+        return [
+          h(SvgIcon, { class: 'fixture-icon', name: 'cheer', size: '32px', style: '--svg-icon-fill: #fff;' }),
+          h(SvgIcon, { class: 'fixture-icon', name: 'group', size: '32px' }),
+          h(SvgIcon, { class: 'fixture-icon', name: 'calendar', size: '32px' }),
+          h(SvgIcon, { class: 'fixture-icon', name: 'external-link', size: '32px' })
+        ];
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
