@@ -17,39 +17,40 @@ async function scrapeCpblSchedules() {
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox'] 
   });
-  const page = await browser.newPage();
-  
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
-  
-  console.log('[Scraper] 前往中職賽程頁面...');
-  await page.goto('https://www.cpbl.com.tw/schedule', { waitUntil: 'networkidle2' });
-  
-  if (isCancelled) {
-    await browser.close();
-    return null;
-  }
+  let rawGames;
 
-  console.log('[Scraper] 等待賽事資料載入...');
   try {
-    await page.waitForSelector('.game_detail', { timeout: 10000 });
-  } catch (e) {
-    console.warn('[Scraper] 找不到 .game_detail，嘗試直接擷取');
-  }
+    const page = await browser.newPage();
 
-  const rawGames = await page.evaluate(() => {
-    if (window.app && window.app.gameDatas) {
-      return window.app.gameDatas;
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
+
+    console.log('[Scraper] 前往中職賽程頁面...');
+    const [gameDataResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) => response.request().method() === 'POST'
+          && new URL(response.url()).pathname === '/schedule/getgamedatas'
+          && response.status() === 200,
+        { timeout: 15000 },
+      ),
+      page.goto('https://www.cpbl.com.tw/schedule', { waitUntil: 'domcontentloaded' }),
+    ]);
+
+    if (isCancelled) return null;
+
+    const payload = await gameDataResponse.json();
+    if (!payload.Success || typeof payload.GameDatas !== 'string') {
+      throw new Error('中職賽程 API 未回傳賽事資料');
     }
-    return null;
-  });
 
-  await browser.close();
+    rawGames = JSON.parse(payload.GameDatas);
+    if (!Array.isArray(rawGames) || rawGames.length === 0) {
+      throw new Error('中職賽程 API 未回傳賽事資料');
+    }
+  } finally {
+    await browser.close();
+  }
 
   if (isCancelled) return null;
-
-  if (!rawGames) {
-    throw new Error('Cannot find gameDatas in window.app');
-  }
 
   console.log(`[Scraper] 成功取得 ${rawGames.length} 筆原始賽事資料`);
 
