@@ -89,6 +89,7 @@
 import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
+import { getFriendsBoughtList } from '../utils/groupMarks.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -97,6 +98,7 @@ const props = defineProps({
   cheerleaderData: Object,
   userMarks: Object,
   groupMarks: Object,
+  currentUser: Object,
   ticketRules: Object,
   restSeatData: Object,
   isAdmin: Boolean,
@@ -134,12 +136,10 @@ const friendsWantList = computed(() => {
 });
 
 const friendsBoughtList = computed(() => {
-  if (!props.groupMarks || Object.keys(props.groupMarks).length === 0) return [];
-  const list = [];
-  Object.entries(props.groupMarks).forEach(([uid, userData]) => {
-    const mark = userData.marks?.[props.game.gameId];
-    if (mark?.ticketPurchased) list.push(userData.displayName || uid);
-  });
-  return list;
+  return getFriendsBoughtList(
+    props.groupMarks,
+    props.game.gameId,
+    props.currentUser?.uid,
+  );
 });
 </script>

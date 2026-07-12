@@ -144,6 +144,7 @@
         :cheerleaderData="cheerleaderData" 
         :userMarks="userMarks" 
         :groupMarks="groupMarks"
+        :currentUser="currentUser"
         :ticketRules="ticketRules"
         :restSeatData="restSeatData"
         :isAdmin="isAdmin"

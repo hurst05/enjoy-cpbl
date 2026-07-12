@@ -40,6 +40,7 @@
               :cheerleaderData="cheerleaderData"
               :userMarks="userMarks"
               :groupMarks="groupMarks"
+              :currentUser="currentUser"
               :ticketRules="ticketRules"
               :restSeatData="restSeatData"
               :isAdmin="isAdmin"
@@ -72,6 +73,7 @@
           :cheerleaderData="cheerleaderData"
           :userMarks="userMarks"
           :groupMarks="groupMarks"
+          :currentUser="currentUser"
           :ticketRules="ticketRules"
           :restSeatData="restSeatData"
           :isAdmin="isAdmin"
@@ -94,6 +96,7 @@ const props = defineProps({
   cheerleaderData: Object,
   userMarks: Object,
   groupMarks: Object,
+  currentUser: Object,
   ticketRules: Object,
   restSeatData: Object,
   isAdmin: Boolean,
