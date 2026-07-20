@@ -43,7 +43,26 @@
         </div>
 
         <div v-if="weatherModel" class="modal-section weather-section">
-          <div class="modal-section-title">🌦️ 球場天氣</div>
+          <div class="modal-section-title weather-section-title">
+            <span class="weather-title-symbol">☀️</span>
+            <span>球場天氣</span>
+            <a
+              :href="cwaBallparkUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="weather-title-link"
+              :aria-label="`查看${game.location}的中央氣象署球場天氣`"
+              :title="`查看${game.location}的中央氣象署球場天氣`"
+            >
+              <img
+                v-if="weatherIconUrl"
+                :src="weatherIconUrl"
+                :alt="weatherModel.gamePeriod.weather"
+                class="weather-title-icon"
+              />
+              <span v-else aria-hidden="true">🌦️</span>
+            </a>
+          </div>
           <p v-if="weatherModel.freshness === 'stale'" class="weather-warning">
             ⚠️ 天氣資料可能已過期
           </p>
@@ -56,7 +75,10 @@
               <span class="weather-period-time">{{ formatWeatherPeriod(period) }}</span>
               <span class="weather-period-text">{{ period.weather }}</span>
               <span>降雨 {{ period.rainProbability ?? '—' }}%</span>
-              <span v-if="period.minTemperature != null || period.maxTemperature != null">
+              <span
+                v-if="period.minTemperature != null || period.maxTemperature != null"
+                class="weather-period-temperature"
+              >
                 {{ period.minTemperature ?? period.maxTemperature }}–{{ period.maxTemperature ?? period.minTemperature }}°C
               </span>
             </div>
@@ -187,9 +209,15 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
+import { getCwaBallparkUrl } from '../data/ballparks.js';
 import { updateThemeDay } from '../firebase.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
-import { formatWeatherDateTime, formatWeatherPeriod, getGameWeather } from '../utils/weather.js';
+import {
+  formatWeatherDateTime,
+  formatWeatherPeriod,
+  getGameWeather,
+  getWeatherIconUrl,
+} from '../utils/weather.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -239,6 +267,8 @@ const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
 const weatherModel = computed(() => getGameWeather(props.game, props.weatherData));
+const weatherIconUrl = computed(() => getWeatherIconUrl(weatherModel.value?.gamePeriod));
+const cwaBallparkUrl = computed(() => getCwaBallparkUrl(props.game.location));
 const restSeatDisplay = computed(() => {
   if (!isRestSeatGame(props.game)) return null;
 
@@ -377,6 +407,41 @@ const toggleTicketPurchased = () => {
 
 <style lang="scss" scoped>
 .weather-section {
+  .weather-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .weather-title-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 0.2s, transform 0.2s;
+
+    &:hover {
+      background: var(--bg-hover);
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent-coral);
+      outline-offset: 2px;
+    }
+  }
+
+  .weather-title-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.3));
+  }
+
   .weather-warning {
     margin: 0 0 8px;
     color: var(--accent-coral);
@@ -410,6 +475,12 @@ const toggleTicketPurchased = () => {
 .weather-period-text {
   color: var(--text-primary);
   font-weight: 700;
+}
+
+.weather-period-text,
+.weather-period-temperature {
+  justify-self: end;
+  text-align: right;
 }
 
 .weather-meta {

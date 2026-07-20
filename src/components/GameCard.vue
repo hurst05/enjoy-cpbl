@@ -5,7 +5,8 @@
       'game-card-list': mode === 'list', 
       'game-postponed': game.status === 'postponed',
       'game-card-filtered-out': isFilterActive && !isMatched,
-      'game-card-highlighted': isFilterActive && isMatched
+      'game-card-highlighted': isFilterActive && isMatched,
+      'game-card-has-weather': weatherIconUrl
     }"
     :style="{ 
       '--card-bg': `color-mix(in srgb, ${homeTeam.color} 15%, var(--bg-card))`,
@@ -185,21 +186,62 @@ const friendsBoughtList = computed(() => {
 </script>
 
 <style lang="scss" scoped>
+.game-card {
+  container: weather-card / inline-size;
+}
+
+.icon-weather {
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(27, 42, 63, 0.3);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.24);
+  z-index: 2;
+}
+
+.game-card-has-weather:not(.game-card-list) .game-matchup {
+  box-sizing: border-box;
+  width: 100%;
+  justify-content: center;
+  gap: 0;
+  overflow: visible;
+}
+
+.game-card-has-weather:not(.game-card-list) .game-center-info {
+  margin: 0;
+}
+
+@container weather-card (max-width: 115px) {
+  .game-card-has-weather:not(.game-card-list) .game-matchup {
+    padding-left: 18px;
+    justify-content: flex-start;
+  }
+}
+
 .weather-icon-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .weather-icon-image {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 16px;
+  height: 16px;
+  filter: saturate(1.12) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
 }
 
 .icon-weather-stale .weather-icon-image,
 .icon-weather-expired .weather-icon-image {
-  filter: saturate(0.7);
+  filter: saturate(0.72) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
 }
 
 .weather-tooltip-details {
