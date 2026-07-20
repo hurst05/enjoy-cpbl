@@ -130,7 +130,7 @@ const friendsWantList = computed(() => {
   const list = [];
   Object.entries(props.groupMarks).forEach(([uid, userData]) => {
     const mark = userData.marks?.[props.game.gameId];
-    if (mark?.wantToWatch) list.push(userData.displayName || uid);
+    if (uid !== props.currentUser?.uid && mark?.wantToWatch) list.push(userData.displayName || uid);
   });
   return list;
 });
