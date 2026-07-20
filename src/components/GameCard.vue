@@ -29,6 +29,23 @@
 
     <div v-if="game.themeDay" class="game-theme-day">🎉 {{ game.themeDay }}</div>
 
+    <div
+      v-if="weatherModel"
+      class="game-weather"
+      :class="`game-weather-${weatherModel.freshness}`"
+    >
+      <template v-if="weatherModel.freshness === 'expired'">☁️ 天氣無法更新</template>
+      <template v-else-if="weatherModel.mode === 'shortTerm'">
+        🌧️ 降雨 {{ weatherModel.maxRainProbability ?? '—' }}%
+      </template>
+      <template v-else>
+        <span v-for="period in weatherModel.periods.slice(0, 2)" :key="period.startAt">
+          {{ period.weather }} {{ period.rainProbability ?? '—' }}%
+        </span>
+      </template>
+      <span v-if="weatherModel.freshness === 'stale'" title="天氣資料可能已過期">⚠️</span>
+    </div>
+
     <div class="game-icons">
       <!-- Cheerleader -->
       <span v-if="hasCheerData" class="tooltip-wrapper icon-cheer hide-on-mobile">
@@ -90,6 +107,7 @@ import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 import { getFriendsBoughtList } from '../utils/groupMarks.js';
+import { getGameWeather } from '../utils/weather.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -101,6 +119,7 @@ const props = defineProps({
   currentUser: Object,
   ticketRules: Object,
   restSeatData: Object,
+  weatherData: Object,
   isAdmin: Boolean,
   isFilterActive: Boolean,
   isMatched: Boolean
@@ -110,6 +129,7 @@ const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const markData = computed(() => props.userMarks?.[props.game.gameId]);
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
+const weatherModel = computed(() => getGameWeather(props.game, props.weatherData));
 
 const hasCheerData = computed(() => {
   return cheers.value && (cheers.value.homeMembers?.length > 0 || cheers.value.awayMembers?.length > 0);
@@ -143,3 +163,39 @@ const friendsBoughtList = computed(() => {
   );
 });
 </script>
+
+<style lang="scss" scoped>
+.game-weather {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+  margin-top: 5px;
+  padding: 2px 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-card) 75%, #77bff2);
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.game-weather-stale,
+.game-weather-expired {
+  color: var(--accent-coral);
+}
+
+@media (max-width: 768px) {
+  .game-weather {
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+  }
+}
+</style>

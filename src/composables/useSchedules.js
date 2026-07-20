@@ -1,11 +1,12 @@
 import { ref } from 'vue';
-import { getSchedules, getThemeDays, getAllCheerleaders, getTicketSchedules, getRestSeats } from '../firebase.js';
+import { getSchedules, getThemeDays, getAllCheerleaders, getTicketSchedules, getRestSeats, getWeather } from '../firebase.js';
 
 export function useSchedules() {
   const scheduleData = ref({});
   const cheerleaderData = ref({});
   const ticketRules = ref({});
   const restSeatData = ref({});
+  const weatherData = ref(null);
   const isMounted = ref(false);
 
   async function loadTicketRules() {
@@ -22,6 +23,15 @@ export function useSchedules() {
       restSeatData.value = await getRestSeats() || {};
     } catch (e) {
       console.error('載入歇歇席資料失敗:', e);
+    }
+  }
+
+  async function loadWeatherData() {
+    try {
+      weatherData.value = await getWeather();
+    } catch (e) {
+      weatherData.value = null;
+      console.error('載入球場天氣失敗:', e);
     }
   }
 
@@ -46,8 +56,7 @@ export function useSchedules() {
   }
 
   async function initSchedules() {
-    await loadTicketRules();
-    await loadScheduleData();
+    await Promise.all([loadTicketRules(), loadWeatherData(), loadScheduleData()]);
   }
 
   return {
@@ -55,9 +64,11 @@ export function useSchedules() {
     cheerleaderData,
     ticketRules,
     restSeatData,
+    weatherData,
     isMounted,
     loadTicketRules,
     loadRestSeats,
+    loadWeatherData,
     loadScheduleData,
     initSchedules
   };

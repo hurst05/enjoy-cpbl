@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "sync-schedules": "node scripts/sync-schedules.js",
+    "sync-weather": "node scripts/sync-weather.js",
     "sync-cheerleaders": "node scripts/sync-cheerleaders.js",
     "import-cheerleaders": "node scripts/import-cheerleaders-from-files.js"
   },
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "firebase": "^12.14.0",
+    "firebase-admin": "^14.2.0",
     "jsdom": "^29.1.1",
     "vue": "^3.5.38"
   }

@@ -43,6 +43,7 @@
               :currentUser="currentUser"
               :ticketRules="ticketRules"
               :restSeatData="restSeatData"
+              :weatherData="weatherData"
               :isAdmin="isAdmin"
               :isFilterActive="isFilterActive"
               :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
@@ -76,6 +77,7 @@
           :currentUser="currentUser"
           :ticketRules="ticketRules"
           :restSeatData="restSeatData"
+          :weatherData="weatherData"
           :isAdmin="isAdmin"
           :isFilterActive="isFilterActive"
           :isMatched="isFilterActive ? matchedGameIds.has(game.gameId) : true"
@@ -99,6 +101,7 @@ const props = defineProps({
   currentUser: Object,
   ticketRules: Object,
   restSeatData: Object,
+  weatherData: Object,
   isAdmin: Boolean,
   isFilterActive: Boolean,
   matchedGameIds: Object

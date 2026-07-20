@@ -147,6 +147,7 @@
         :currentUser="currentUser"
         :ticketRules="ticketRules"
         :restSeatData="restSeatData"
+        :weatherData="weatherData"
         :isAdmin="isAdmin"
         :isFilterActive="isFilterActive"
         :matchedGameIds="matchedGameIds"
@@ -164,6 +165,7 @@
       :currentUser="currentUser"
       :ticketRules="ticketRules"
       :restSeatData="restSeatData"
+      :weatherData="weatherData"
       :isAdmin="isAdmin"
       :highlightCheerMembers="filters.cheerMembers"
       @close="closeGameModal"
@@ -248,7 +250,7 @@ const { userMarks, groupMarks, loadUserMarksData, loadGroupData, handleMark } = 
 const { currentUser, userProfile, isAdmin, isGoogleLinked, initAuth, handleLogout, handleLinkGoogle, handleUnlinkGoogle, loadUserData } = useAuth(loadUserMarksData);
 
 // 3. 初始化賽程
-const { scheduleData, cheerleaderData, ticketRules, restSeatData, isMounted, loadTicketRules, loadRestSeats, loadScheduleData, initSchedules } = useSchedules();
+const { scheduleData, cheerleaderData, ticketRules, restSeatData, weatherData, isMounted, loadTicketRules, loadRestSeats, loadScheduleData, initSchedules } = useSchedules();
 
 // 4. 初始化篩選器
 const {

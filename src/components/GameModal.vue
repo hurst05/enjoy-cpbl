@@ -42,6 +42,31 @@
           </div>
         </div>
 
+        <div v-if="weatherModel" class="modal-section weather-section">
+          <div class="modal-section-title">🌦️ 球場天氣</div>
+          <p v-if="weatherModel.freshness === 'stale'" class="weather-warning">
+            ⚠️ 天氣資料可能已過期
+          </p>
+          <p v-else-if="weatherModel.freshness === 'expired'" class="weather-warning">
+            ⚠️ 天氣無法更新，以下為最後取得的預報
+          </p>
+          <p v-if="weatherModel.mode === 'tbd'" class="weather-note">開賽時間未定，顯示當日趨勢。</p>
+          <div class="weather-periods">
+            <div v-for="period in weatherModel.periods" :key="period.startAt" class="weather-period">
+              <span class="weather-period-time">{{ formatWeatherPeriod(period) }}</span>
+              <span class="weather-period-text">{{ period.weather }}</span>
+              <span>降雨 {{ period.rainProbability ?? '—' }}%</span>
+              <span v-if="period.minTemperature != null || period.maxTemperature != null">
+                {{ period.minTemperature ?? period.maxTemperature }}–{{ period.maxTemperature ?? period.minTemperature }}°C
+              </span>
+            </div>
+          </div>
+          <div class="weather-meta">
+            <span>發布：{{ formatWeatherDateTime(weatherModel.sourceIssuedAt) }}</span>
+            <span>同步：{{ formatWeatherDateTime(weatherModel.fetchedAt) }}</span>
+          </div>
+        </div>
+
         <!-- Cheerleader Section -->
         <div class="modal-section" v-if="cheers">
           <div class="modal-section-title">
@@ -164,6 +189,7 @@ import { ref, computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { updateThemeDay } from '../firebase.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
+import { formatWeatherDateTime, formatWeatherPeriod, getGameWeather } from '../utils/weather.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -174,6 +200,7 @@ const props = defineProps({
   currentUser: Object,
   ticketRules: Object,
   restSeatData: Object,
+  weatherData: Object,
   isAdmin: Boolean,
   highlightCheerMembers: {
     type: Array,
@@ -211,6 +238,7 @@ const saveThemeDay = async () => {
 const homeTeam = computed(() => TEAMS[props.game.homeTeam] || { name: props.game.homeTeam, color: '#999' });
 const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game.awayTeam, color: '#999' });
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
+const weatherModel = computed(() => getGameWeather(props.game, props.weatherData));
 const restSeatDisplay = computed(() => {
   if (!isRestSeatGame(props.game)) return null;
 
@@ -346,3 +374,57 @@ const toggleTicketPurchased = () => {
   emit('mark', { gameId: props.game.gameId, markType: 'ticketPurchased', value: !ticketPurchased.value });
 };
 </script>
+
+<style lang="scss" scoped>
+.weather-section {
+  .weather-warning {
+    margin: 0 0 8px;
+    color: var(--accent-coral);
+    font-weight: 700;
+  }
+
+  .weather-note {
+    margin: 0 0 8px;
+    color: var(--text-secondary);
+  }
+}
+
+.weather-periods {
+  display: grid;
+  gap: 6px;
+}
+
+.weather-period {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.weather-period-time,
+.weather-period-text {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.weather-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 768px) {
+  .weather-period {
+    grid-template-columns: 1fr auto;
+    gap: 4px 8px;
+  }
+}
+</style>

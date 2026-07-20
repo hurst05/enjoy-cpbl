@@ -20,6 +20,12 @@ export async function getSchedules() {
   return snapshot.val();
 }
 
+export async function getWeather() {
+  const snapshot = await get(ref(db, 'weather'));
+  const data = snapshot.val();
+  return data?.status === 'ok' && data.venues && typeof data.venues === 'object' ? data : null;
+}
+
 export async function saveSchedules(data) {
   await set(ref(db, 'schedules'), data);
 }
