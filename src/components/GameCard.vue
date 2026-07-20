@@ -209,7 +209,7 @@ const friendsBoughtList = computed(() => {
   box-sizing: border-box;
   width: 100%;
   justify-content: center;
-  gap: 0;
+  gap: 6px;
   overflow: visible;
 }
 

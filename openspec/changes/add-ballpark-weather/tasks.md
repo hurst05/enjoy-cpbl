@@ -52,10 +52,10 @@
 
 - [x] 6.1 執行天氣 `--self-test`、`npm run build` 與 Firebase Rules
   emulator 或等價檢查，驗證公開讀取及 Web SDK 寫入拒絕
-- [ ] 6.2 將已取得的 `CWA_API_KEY` 設為 GitHub Actions secret，確認既有
+- [x] 6.2 將已取得的 `CWA_API_KEY` 設為 GitHub Actions secret，確認既有
   Firebase Service Account secret 可用，再手動執行 workflow 驗證
   `/weather` 與 `/lastSync/weather`
-- [ ] 6.3 部署 Database Rules 與前端，驗證 72 小時內、第四至第七日、
+- [x] 6.3 部署 Database Rules 與前端，驗證 72 小時內、第四至第七日、
   `TBD`、過期及同步失敗保留舊快照情境後保留排程執行
 
 ## 7. 卡片天氣圖示調整
