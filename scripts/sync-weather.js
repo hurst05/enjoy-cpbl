@@ -1,14 +1,27 @@
+import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cert, initializeApp } from 'firebase-admin/app';
+import { cert, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 import { BALLPARKS, CWA_DATASETS } from '../src/data/ballparks.js';
 import { selectOverlappingPeriods } from '../src/utils/weather.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const CWA_API_ROOT = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore';
+const FIREBASE_TIMEOUT_MS = 30_000;
+
+function withTimeout(promise, label, timeoutMs = FIREBASE_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label}逾時（${timeoutMs} 毫秒）`)),
+      timeoutMs,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 function asArray(value) {
   if (value == null) return [];
@@ -90,6 +103,19 @@ function parseTemperature(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function inferSourceIssuedAt(locations) {
+  const timestamps = asArray(locations?.Location || locations?.location)
+    .flatMap((location) => asArray(location?.WeatherElement || location?.weatherElement))
+    .flatMap((element) => elementTimes(element))
+    .map((time) => time.StartTime || time.startTime || time.DataTime || time.dataTime)
+    .map(Date.parse)
+    .filter(Number.isFinite);
+  if (timestamps.length === 0) {
+    throw new Error('CWA 回應缺少 IssueTime，且無法從預報時段推算發布時間');
+  }
+  return new Date(Math.min(...timestamps) - 60 * 60 * 1000).toISOString();
+}
+
 function getDatasetParts(payload) {
   if (payload?.success !== undefined && payload.success !== true && payload.success !== 'true') {
     throw new Error('CWA 回應失敗');
@@ -108,8 +134,13 @@ function getDatasetParts(payload) {
     || root?.IssueTime || root?.issueTime
     || locations?.IssueTime || locations?.issueTime;
 
-  if (!locations || !sourceIssuedAt) throw new Error('CWA 回應缺少 Locations 或 IssueTime');
-  return { locations, sourceIssuedAt: normalizeIso(sourceIssuedAt, '發布') };
+  if (!locations) throw new Error('CWA 回應缺少 Locations');
+  return {
+    locations,
+    sourceIssuedAt: sourceIssuedAt
+      ? normalizeIso(sourceIssuedAt, '發布')
+      : inferSourceIssuedAt(locations),
+  };
 }
 
 function elementName(element) {
@@ -260,38 +291,68 @@ export function getPublishUpdates(existingWeather, snapshot) {
   };
 }
 
+function validateServiceAccountProject(serviceAccount, expectedProjectId) {
+  const actualProjectId = serviceAccount?.project_id || '未提供';
+  if (actualProjectId !== expectedProjectId) {
+    throw new Error(
+      `Service Account project_id 不符：預期 ${expectedProjectId}，實際 ${actualProjectId}`,
+    );
+  }
+}
+
+export function parseServiceAccountCredential(rawCredential, loadFile = readFileSync) {
+  const value = rawCredential.trim();
+  const json = value.startsWith('{') ? value : loadFile(resolve(value), 'utf8');
+  return JSON.parse(json);
+}
+
 function createDatabase() {
   const rawCredential = process.env.FIREBASE_SERVICE_ACCOUNT_ENJOY_CPBL;
   if (!rawCredential) throw new Error('缺少 FIREBASE_SERVICE_ACCOUNT_ENJOY_CPBL');
-  const serviceAccount = JSON.parse(rawCredential);
+  const serviceAccount = parseServiceAccountCredential(rawCredential);
   const config = JSON.parse(readFileSync(new URL('../firebase-applet-config.json', import.meta.url), 'utf8'));
-  initializeApp({ credential: cert(serviceAccount), databaseURL: config.databaseURL });
-  return getDatabase();
+  validateServiceAccountProject(serviceAccount, config.projectId);
+  const app = initializeApp({ credential: cert(serviceAccount), databaseURL: config.databaseURL });
+  return { app, database: getDatabase(app) };
 }
 
 async function syncWeather() {
   const apiKey = process.env.CWA_API_KEY;
   if (!apiKey) throw new Error('缺少 CWA_API_KEY');
-  const database = createDatabase();
-  const schedules = (await database.ref('schedules').get()).val() || {};
-  const groups = groupVenuesByCity(selectUpcomingVenues(schedules));
-  const responses = new Map();
+  const { app, database } = createDatabase();
+  try {
+    const schedulesSnapshot = await withTimeout(
+      database.ref('schedules').get(),
+      'Firebase schedules 讀取',
+    );
+    const schedules = schedulesSnapshot.val() || {};
+    const groups = groupVenuesByCity(selectUpcomingVenues(schedules));
+    const responses = new Map();
 
-  for (const [city, group] of groups) {
-    const datasets = CWA_DATASETS[city];
-    const districts = [...group.districts];
-    if (!datasets) throw new Error(`${city} 缺少 F-D0047 資料集對照`);
-    const [shortTerm, weekly] = await Promise.all([
-      fetchCwaDataset(datasets.shortTerm, districts, apiKey),
-      fetchCwaDataset(datasets.weekly, districts, apiKey),
-    ]);
-    responses.set(city, { shortTerm, weekly });
+    for (const [city, group] of groups) {
+      const datasets = CWA_DATASETS[city];
+      const districts = [...group.districts];
+      if (!datasets) throw new Error(`${city} 缺少 F-D0047 資料集對照`);
+      const [shortTerm, weekly] = await Promise.all([
+        fetchCwaDataset(datasets.shortTerm, districts, apiKey),
+        fetchCwaDataset(datasets.weekly, districts, apiKey),
+      ]);
+      responses.set(city, { shortTerm, weekly });
+    }
+
+    const snapshot = buildWeatherSnapshot(groups, responses);
+    const existingWeatherSnapshot = await withTimeout(
+      database.ref('weather').get(),
+      'Firebase weather 讀取',
+    );
+    await withTimeout(
+      database.ref().update(getPublishUpdates(existingWeatherSnapshot.val(), snapshot)),
+      'Firebase weather 寫入',
+    );
+    console.log(`已同步 ${Object.keys(snapshot.venues).length} 個球場，發布時間 ${snapshot.sourceIssuedAt}`);
+  } finally {
+    await deleteApp(app);
   }
-
-  const snapshot = buildWeatherSnapshot(groups, responses);
-  const existingWeather = (await database.ref('weather').get()).val();
-  await database.ref().update(getPublishUpdates(existingWeather, snapshot));
-  console.log(`已同步 ${Object.keys(snapshot.venues).length} 個球場，發布時間 ${snapshot.sourceIssuedAt}`);
 }
 
 function fixture(issueTime, rain = '40') {
@@ -324,7 +385,7 @@ function fixture(issueTime, rain = '40') {
   };
 }
 
-function runSelfTest() {
+async function runSelfTest() {
   const now = new Date('2026-07-20T08:00:00+08:00');
   assert.deepEqual(
     selectUpcomingVenues({ a: { date: '2026-07-20', location: '天母' }, b: { date: '2026-07-26', location: '天母' }, c: { date: '2026-07-27', location: '洲際' } }, now),
@@ -332,9 +393,19 @@ function runSelfTest() {
   );
   const groups = groupVenuesByCity(['天母', '大巨蛋']);
   assert.deepEqual([...groups.get('臺北市').districts], ['士林區', '信義區']);
+  assert.throws(
+    () => validateServiceAccountProject({ project_id: 'wrong-project' }, 'enjoy-cpbl'),
+    /Service Account project_id 不符：預期 enjoy-cpbl，實際 wrong-project/,
+  );
 
   const normalized = normalizeCwaResponse(fixture('2026-07-20T05:00:00+08:00'), 3);
   assert.equal(normalized.locations['士林區'][1].rainProbability, 40);
+  const apiPayload = fixture('2026-07-20T05:00:00+08:00');
+  delete apiPayload.records.DatasetInfo;
+  assert.equal(
+    normalizeCwaResponse(apiPayload, 3).sourceIssuedAt,
+    '2026-07-20T03:00:00.000Z',
+  );
   assert.throws(() => normalizeCwaResponse(fixture('2026-07-20T05:00:00+08:00', '101'), 3), /降雨機率/);
   assert.equal(selectOverlappingPeriods(normalized.locations['士林區'], Date.parse('2026-07-20T14:00:00+08:00'), Date.parse('2026-07-20T17:00:00+08:00')).length, 2);
 
@@ -343,6 +414,14 @@ function runSelfTest() {
     { sourceIssuedAt: normalized.sourceIssuedAt, fetchedAt: 123, venues: { replace: true } },
   );
   assert.deepEqual(updates, { 'weather/fetchedAt': 123, 'lastSync/weather': 123 });
+  assert.deepEqual(
+    parseServiceAccountCredential('credential.json', () => '{"project_id":"enjoy-cpbl"}'),
+    { project_id: 'enjoy-cpbl' },
+  );
+  await assert.rejects(
+    withTimeout(new Promise(() => {}), 'Firebase 測試', 5),
+    /Firebase 測試逾時（5 毫秒）/,
+  );
   console.log('sync-weather self-test passed');
 }
 
@@ -354,7 +433,10 @@ const isMain = process.platform === 'win32'
 
 if (isMain) {
   if (process.argv.includes('--self-test')) {
-    runSelfTest();
+    runSelfTest().catch((error) => {
+      console.error(`天氣同步 self-test 失敗：${error.message}`);
+      process.exitCode = 1;
+    });
   } else {
     syncWeather().catch((error) => {
       console.error(`天氣同步失敗：${error.message}`);

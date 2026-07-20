@@ -83,6 +83,11 @@ weather
 `rainProbability`；有可靠資料時可包含溫度範圍。時間一律正規化為含時區
 的 ISO 8601 字串。
 
+CWA 資料擷取 API 的精簡 JSON 回應不包含原始資料的
+`DatasetInfo/IssueTime`。Parser 在該欄位存在時優先使用；缺少時則以所有
+必要預報時段中最早的 `DataTime`／`StartTime` 往前一小時推算報別時間。
+三日與一週資料仍必須推算出相同 `sourceIssuedAt`，否則不得發布。
+
 所有必要球場、行政區、時段與降雨機率都通過驗證，且資料集可歸屬同一
 `sourceIssuedAt` 後，才允許發布。七日內無有效球場視為驗證失敗，不呼叫
 CWA，也不以空快照覆蓋舊資料。
