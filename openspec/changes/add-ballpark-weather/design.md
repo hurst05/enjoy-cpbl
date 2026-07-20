@@ -102,6 +102,11 @@ CWA，也不以空快照覆蓋舊資料。
 `/weather/fetchedAt` 與 `/lastSync/weather`；`venues` 保持不動。Firebase
 快照本身就是前端讀取快取，不另建快取層或歷史節點。
 
+維護者可用 `npm run sync-weather -- --force` 覆寫相同報次。`--force` 仍會先
+完成 CWA 查詢、資料正規化與完整驗證，只略過 `sourceIssuedAt` 去重；發布
+仍使用同一個 root multi-location update，不提供略過驗證或直接重送舊資料
+的路徑。排程與未帶參數的手動執行維持 metadata-only 行為。
+
 ### 6. 前端沿用既有載入與 props 流程
 
 `src/firebase.js` 新增唯讀 `getWeather()`；`useSchedules` 新增獨立的
@@ -124,6 +129,22 @@ CWA，也不以空快照覆蓋舊資料。
 `database.rules.json` 新增 `weather` 的 `.read: true` 與 `.write: false`。
 Admin SDK 使用 Service Account，可繞過 client rules；前端不新增任何天氣
 寫入函式。
+
+### 9. 卡片使用單一 CWA 夜間圖示
+
+同步資料的每個預報時段新增 CWA `weatherCode`。逐三小時資料同時讀取
+`T` 溫度點，將該時段起訖邊界內的溫度整理為 `minTemperature` 與
+`maxTemperature`；逐十二小時資料沿用 `MinT`／`MaxT`。
+
+`src/utils/weather.js` 從既有賽事天氣模型選出包含開賽時間的時段；若資料
+沒有恰好包含開賽時間，才選擇起始時間距開賽時間最近的時段。卡片只渲染
+該時段，圖示固定使用 CWA 官方 `night/<weatherCode>.svg`。為相容尚未重新
+同步的舊快照，常見天氣文字提供有限的代碼 fallback；新快照以
+`weatherCode` 為準。
+
+desktop 卡片將天氣圖示放入既有 tooltip 模式，hover 顯示天氣簡述、降雨
+機率與溫度範圍。mobile 只顯示圖示，不額外展開摘要，以避免卡片高度增加。
+`GameModal` 仍顯示所有相關預報時段。
 
 ## Risks / Trade-offs
 

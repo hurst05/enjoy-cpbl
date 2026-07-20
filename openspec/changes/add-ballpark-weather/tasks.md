@@ -57,3 +57,20 @@
   `/weather` 與 `/lastSync/weather`
 - [ ] 6.3 部署 Database Rules 與前端，驗證 72 小時內、第四至第七日、
   `TBD`、過期及同步失敗保留舊快照情境後保留排程執行
+
+## 7. 卡片天氣圖示調整
+
+- [x] 7.1 先新增失敗測試，覆蓋包含開賽時間的單一時段選取、CWA night
+  圖示代碼、逐三小時氣溫範圍與逐十二小時 fallback
+- [x] 7.2 擴充天氣同步 parser，保存 `WeatherCode`，並從三日資料的 `T`
+  溫度點建立每個逐三小時時段的最低與最高氣溫
+- [x] 7.3 調整 `src/utils/weather.js` 與 `GameCard`，只顯示最接近開賽時間的
+  CWA 夜間圖示，desktop tooltip 顯示天氣、降雨機率與氣溫
+- [x] 7.4 執行 self-test、前端邏輯測試、build 與 desktop/mobile 瀏覽器驗證
+
+## 8. 強制重寫相同報次
+
+- [x] 8.1 先新增失敗測試，確認 `--force` 會完整發布相同
+  `sourceIssuedAt`，且預設分支仍只更新 metadata
+- [x] 8.2 實作 `npm run sync-weather -- --force` 的 CLI 參數傳遞與完整
+  root update，並執行 self-test、build 與 diff 檢查

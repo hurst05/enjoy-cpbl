@@ -6,7 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { cert, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 import { BALLPARKS, CWA_DATASETS } from '../src/data/ballparks.js';
-import { selectOverlappingPeriods } from '../src/utils/weather.js';
+import {
+  formatWeatherTemperature,
+  getGameWeather,
+  getWeatherIconUrl,
+  selectOverlappingPeriods,
+} from '../src/utils/weather.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const CWA_API_ROOT = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore';
@@ -155,6 +160,10 @@ function findElement(elements, names) {
   return elements.find((element) => names.some((name) => elementName(element).includes(name)));
 }
 
+function findExactElement(elements, names) {
+  return elements.find((element) => names.includes(elementName(element)));
+}
+
 function periodBounds(time, nextTime, intervalHours) {
   const startAt = time.StartTime || time.startTime || time.DataTime || time.dataTime;
   const endAt = time.EndTime || time.endTime
@@ -174,12 +183,39 @@ function overlappingValue(element, startAt, endAt, keys, parser = (value) => val
   return match ? parser(firstValue(match.ElementValue || match.elementValue, keys)) : null;
 }
 
+function temperatureRange(element, startAt, endAt) {
+  const start = Date.parse(startAt);
+  const end = Date.parse(endAt);
+  const values = elementTimes(element)
+    .filter((time) => {
+      const timestamp = Date.parse(
+        time.DataTime || time.dataTime || time.StartTime || time.startTime,
+      );
+      return Number.isFinite(timestamp) && timestamp >= start && timestamp <= end;
+    })
+    .map((time) => firstValue(
+      time.ElementValue || time.elementValue,
+      ['Temperature', 'temperature'],
+    ))
+    .map(parseTemperature)
+    .filter((value) => value != null);
+
+  if (values.length === 0) return null;
+  return {
+    minTemperature: Math.min(...values),
+    maxTemperature: Math.max(...values),
+  };
+}
+
 function normalizePeriods(location, intervalHours) {
   const elements = asArray(location.WeatherElement || location.weatherElement);
   const weatherElement = findElement(elements, ['天氣現象', 'Wx']);
   const rainElement = findElement(elements, ['降雨機率', 'PoP']);
   const minElement = findElement(elements, ['最低溫度', 'MinT']);
   const maxElement = findElement(elements, ['最高溫度', 'MaxT']);
+  const temperatureElement = intervalHours === 3
+    ? findExactElement(elements, ['溫度', 'T'])
+    : null;
   if (!weatherElement || !rainElement) throw new Error(`${location.LocationName || location.locationName} 缺少天氣或降雨資料`);
 
   const times = elementTimes(weatherElement);
@@ -187,7 +223,10 @@ function normalizePeriods(location, intervalHours) {
 
   return times.map((time, index) => {
     const { startAt, endAt } = periodBounds(time, times[index + 1], intervalHours);
-    const weather = firstValue(time.ElementValue || time.elementValue, ['Weather', 'weather']);
+    const weatherValues = asArray(time.ElementValue || time.elementValue);
+    const weatherValue = weatherValues[0] || {};
+    const weather = firstValue(weatherValues, ['Weather', 'weather']);
+    const weatherCode = weatherValue.WeatherCode || weatherValue.weatherCode;
     if (!weather) throw new Error(`${location.LocationName || location.locationName} 缺少天氣現象`);
 
     const period = {
@@ -202,12 +241,17 @@ function normalizePeriods(location, intervalHours) {
         parseRainProbability,
       ),
     };
-    const minTemperature = minElement && overlappingValue(
+    if (weatherCode != null && String(weatherCode).trim()) {
+      period.weatherCode = String(weatherCode).trim().padStart(2, '0');
+    }
+
+    const range = temperatureElement && temperatureRange(temperatureElement, startAt, endAt);
+    const minTemperature = range?.minTemperature ?? (minElement && overlappingValue(
       minElement, startAt, endAt, ['MinTemperature', 'minTemperature'], parseTemperature,
-    );
-    const maxTemperature = maxElement && overlappingValue(
+    ));
+    const maxTemperature = range?.maxTemperature ?? (maxElement && overlappingValue(
       maxElement, startAt, endAt, ['MaxTemperature', 'maxTemperature'], parseTemperature,
-    );
+    ));
     if (minTemperature != null) period.minTemperature = minTemperature;
     if (maxTemperature != null) period.maxTemperature = maxTemperature;
     return period;
@@ -278,8 +322,8 @@ export function buildWeatherSnapshot(groups, responses, fetchedAt = Date.now()) 
   };
 }
 
-export function getPublishUpdates(existingWeather, snapshot) {
-  if (existingWeather?.sourceIssuedAt === snapshot.sourceIssuedAt) {
+export function getPublishUpdates(existingWeather, snapshot, { force = false } = {}) {
+  if (!force && existingWeather?.sourceIssuedAt === snapshot.sourceIssuedAt) {
     return {
       'weather/fetchedAt': snapshot.fetchedAt,
       'lastSync/weather': snapshot.fetchedAt,
@@ -316,7 +360,7 @@ function createDatabase() {
   return { app, database: getDatabase(app) };
 }
 
-async function syncWeather() {
+async function syncWeather({ force = false } = {}) {
   const apiKey = process.env.CWA_API_KEY;
   if (!apiKey) throw new Error('缺少 CWA_API_KEY');
   const { app, database } = createDatabase();
@@ -346,10 +390,15 @@ async function syncWeather() {
       'Firebase weather 讀取',
     );
     await withTimeout(
-      database.ref().update(getPublishUpdates(existingWeatherSnapshot.val(), snapshot)),
+      database.ref().update(getPublishUpdates(
+        existingWeatherSnapshot.val(),
+        snapshot,
+        { force },
+      )),
       'Firebase weather 寫入',
     );
-    console.log(`已同步 ${Object.keys(snapshot.venues).length} 個球場，發布時間 ${snapshot.sourceIssuedAt}`);
+    const forceLabel = force ? '（強制完整發布）' : '';
+    console.log(`已同步 ${Object.keys(snapshot.venues).length} 個球場${forceLabel}，發布時間 ${snapshot.sourceIssuedAt}`);
   } finally {
     await deleteApp(app);
   }
@@ -367,8 +416,8 @@ function fixture(issueTime, rain = '40') {
             {
               ElementName: '天氣現象',
               Time: [
-                { StartTime: '2026-07-20T12:00:00+08:00', EndTime: '2026-07-20T15:00:00+08:00', ElementValue: [{ Weather: '多雲' }] },
-                { StartTime: '2026-07-20T15:00:00+08:00', EndTime: '2026-07-20T18:00:00+08:00', ElementValue: [{ Weather: '短暫雨' }] },
+                { StartTime: '2026-07-20T12:00:00+08:00', EndTime: '2026-07-20T15:00:00+08:00', ElementValue: [{ Weather: '多雲', WeatherCode: '04' }] },
+                { StartTime: '2026-07-20T15:00:00+08:00', EndTime: '2026-07-20T18:00:00+08:00', ElementValue: [{ Weather: '短暫陣雨', WeatherCode: '08' }] },
               ],
             },
             {
@@ -376,6 +425,14 @@ function fixture(issueTime, rain = '40') {
               Time: [
                 { StartTime: '2026-07-20T12:00:00+08:00', EndTime: '2026-07-20T15:00:00+08:00', ElementValue: [{ ProbabilityOfPrecipitation: '20' }] },
                 { StartTime: '2026-07-20T15:00:00+08:00', EndTime: '2026-07-20T18:00:00+08:00', ElementValue: [{ ProbabilityOfPrecipitation: rain }] },
+              ],
+            },
+            {
+              ElementName: 'T',
+              Time: [
+                { DataTime: '2026-07-20T12:00:00+08:00', ElementValue: [{ Temperature: '33' }] },
+                { DataTime: '2026-07-20T15:00:00+08:00', ElementValue: [{ Temperature: '31' }] },
+                { DataTime: '2026-07-20T18:00:00+08:00', ElementValue: [{ Temperature: '29' }] },
               ],
             },
           ],
@@ -400,6 +457,9 @@ async function runSelfTest() {
 
   const normalized = normalizeCwaResponse(fixture('2026-07-20T05:00:00+08:00'), 3);
   assert.equal(normalized.locations['士林區'][1].rainProbability, 40);
+  assert.equal(normalized.locations['士林區'][1].weatherCode, '08');
+  assert.equal(normalized.locations['士林區'][1].minTemperature, 29);
+  assert.equal(normalized.locations['士林區'][1].maxTemperature, 31);
   const apiPayload = fixture('2026-07-20T05:00:00+08:00');
   delete apiPayload.records.DatasetInfo;
   assert.equal(
@@ -409,11 +469,33 @@ async function runSelfTest() {
   assert.throws(() => normalizeCwaResponse(fixture('2026-07-20T05:00:00+08:00', '101'), 3), /降雨機率/);
   assert.equal(selectOverlappingPeriods(normalized.locations['士林區'], Date.parse('2026-07-20T14:00:00+08:00'), Date.parse('2026-07-20T17:00:00+08:00')).length, 2);
 
+  const gameWeather = getGameWeather(
+    { date: '2026-07-20', time: '16:05', location: '天母' },
+    {
+      status: 'ok',
+      fetchedAt: now.getTime(),
+      venues: { 天母: { shortTerm: normalized.locations['士林區'], weekly: [] } },
+    },
+    now.getTime(),
+  );
+  assert.equal(gameWeather.gamePeriod.weather, '短暫陣雨');
+  assert.match(getWeatherIconUrl(gameWeather.gamePeriod), /\/night\/08\.svg$/);
+  assert.equal(formatWeatherTemperature(gameWeather.gamePeriod), '29–31°C');
+
   const updates = getPublishUpdates(
     { sourceIssuedAt: normalized.sourceIssuedAt, venues: { keep: true } },
     { sourceIssuedAt: normalized.sourceIssuedAt, fetchedAt: 123, venues: { replace: true } },
   );
   assert.deepEqual(updates, { 'weather/fetchedAt': 123, 'lastSync/weather': 123 });
+  const forcedUpdates = getPublishUpdates(
+    { sourceIssuedAt: normalized.sourceIssuedAt, venues: { keep: true } },
+    { sourceIssuedAt: normalized.sourceIssuedAt, fetchedAt: 123, venues: { replace: true } },
+    { force: true },
+  );
+  assert.deepEqual(forcedUpdates, {
+    weather: { sourceIssuedAt: normalized.sourceIssuedAt, fetchedAt: 123, venues: { replace: true } },
+    'lastSync/weather': 123,
+  });
   assert.deepEqual(
     parseServiceAccountCredential('credential.json', () => '{"project_id":"enjoy-cpbl"}'),
     { project_id: 'enjoy-cpbl' },
@@ -438,7 +520,7 @@ if (isMain) {
       process.exitCode = 1;
     });
   } else {
-    syncWeather().catch((error) => {
+    syncWeather({ force: process.argv.includes('--force') }).catch((error) => {
       console.error(`天氣同步失敗：${error.message}`);
       process.exitCode = 1;
     });

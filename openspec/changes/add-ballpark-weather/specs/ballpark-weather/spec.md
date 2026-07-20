@@ -107,6 +107,13 @@ CWA 授權碼必須放在 HTTP `Authorization` header，且不得寫入 reposito
 - **THEN** 系統只更新 `/weather/fetchedAt` 與 `/lastSync/weather`
 - **AND** 系統不得重寫 `/weather/venues`
 
+#### Scenario: 維護者強制發布相同報次
+
+- **WHEN** 維護者使用 `--force` 且新快照已通過完整驗證
+- **THEN** 即使 `sourceIssuedAt` 相同，系統仍必須原子更新完整 `/weather`
+  與 `/lastSync/weather`
+- **AND** 未帶 `--force` 的排程與手動執行仍必須維持 metadata-only 行為
+
 #### Scenario: 正式發布前失敗
 
 - **WHEN** CWA、驗證或 Firebase 讀取在正式發布前發生錯誤
@@ -152,19 +159,59 @@ CWA 授權碼必須放在 HTTP `Authorization` header，且不得寫入 reposito
 #### Scenario: 72 小時內且開賽時間已知
 
 - **WHEN** 比賽在未來 72 小時內且開賽時間有效
-- **THEN** `GameCard` 顯示比賽窗最大降雨機率摘要
+- **THEN** `GameCard` 選取包含開賽時間的逐三小時預報時段
+- **AND** 卡片顯示該時段的 CWA 夜間天氣圖示
 - **AND** `GameModal` 顯示比賽窗內的預報時段趨勢
 
 #### Scenario: 超過 72 小時的七日內比賽
 
 - **WHEN** 比賽距現在超過 72 小時但位於第七日 `00:00` 前
-- **THEN** 系統顯示該比賽日的逐十二小時天氣趨勢
+- **THEN** `GameCard` 選取包含開賽時間的逐十二小時預報時段並顯示其
+  CWA 夜間天氣圖示
+- **AND** `GameModal` 顯示該比賽日的逐十二小時天氣趨勢
 
 #### Scenario: 開賽時間未定
 
 - **WHEN** 比賽時間為空或 `TBD`
 - **THEN** 系統不得套用預設開賽時間
 - **AND** 系統顯示該日趨勢或「開賽時間未定」
+
+### Requirement: 卡片天氣圖示與摘要
+
+`GameCard` 必須 (MUST) 只顯示一個最接近開賽時間的 CWA 夜間天氣圖示，
+不得在卡片本體列出多個預報時段或完整天氣文字。天氣代碼必須優先使用
+CWA 回應的 `WeatherCode`。
+
+#### Scenario: 預報時段包含開賽時間
+
+- **WHEN** 一個預報時段的開始時間小於等於開賽時間且結束時間大於開賽時間
+- **THEN** 卡片必須使用該預報時段
+
+#### Scenario: 預報時段未完整覆蓋開賽時間
+
+- **WHEN** 可用預報沒有任何時段包含開賽時間
+- **THEN** 卡片必須使用起始時間距開賽時間最近的預報時段
+
+#### Scenario: Desktop 游標移入圖示
+
+- **WHEN** desktop 使用者將游標移入天氣圖示
+- **THEN** tooltip 必須顯示該時段天氣簡述、降雨機率與氣溫
+
+#### Scenario: Mobile 顯示天氣
+
+- **WHEN** 卡片顯示於 mobile 版面
+- **THEN** 卡片只顯示天氣圖示，不增加常駐天氣摘要
+
+### Requirement: 逐三小時氣溫範圍
+
+同步流程必須 (MUST) 將 CWA 三日逐三小時資料的 `T` 溫度點正規化成每個
+預報時段的最低與最高氣溫，並保留逐十二小時資料的 `MinT`／`MaxT`。
+
+#### Scenario: 三小時時段有溫度邊界值
+
+- **WHEN** 一個逐三小時預報時段有開始與結束邊界的溫度點
+- **THEN** 系統必須保存該時段的 `minTemperature` 與 `maxTemperature`
+- **AND** 卡片 tooltip 與 `GameModal` 必須能顯示該氣溫範圍
 
 ### Requirement: 天氣資料時間與過期狀態
 

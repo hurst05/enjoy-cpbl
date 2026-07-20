@@ -29,24 +29,38 @@
 
     <div v-if="game.themeDay" class="game-theme-day">🎉 {{ game.themeDay }}</div>
 
-    <div
-      v-if="weatherModel"
-      class="game-weather"
-      :class="`game-weather-${weatherModel.freshness}`"
-    >
-      <template v-if="weatherModel.freshness === 'expired'">☁️ 天氣無法更新</template>
-      <template v-else-if="weatherModel.mode === 'shortTerm'">
-        🌧️ 降雨 {{ weatherModel.maxRainProbability ?? '—' }}%
-      </template>
-      <template v-else>
-        <span v-for="period in weatherModel.periods.slice(0, 2)" :key="period.startAt">
-          {{ period.weather }} {{ period.rainProbability ?? '—' }}%
-        </span>
-      </template>
-      <span v-if="weatherModel.freshness === 'stale'" title="天氣資料可能已過期">⚠️</span>
-    </div>
-
     <div class="game-icons">
+      <!-- Weather -->
+      <span
+        v-if="weatherIconUrl"
+        class="tooltip-wrapper icon-weather"
+        :class="`icon-weather-${weatherModel.freshness}`"
+      >
+        <span
+          class="tooltip-trigger weather-icon-trigger"
+          :aria-label="`${weatherModel.gamePeriod.weather}，降雨 ${weatherModel.gamePeriod.rainProbability ?? '—'}%，${weatherTemperature}`"
+        >
+          <img
+            :src="weatherIconUrl"
+            :alt="weatherModel.gamePeriod.weather"
+            class="weather-icon-image"
+          />
+        </span>
+        <div class="tooltip-card weather-tooltip-card">
+          <div class="tooltip-title">{{ weatherModel.gamePeriod.weather }}</div>
+          <div class="tooltip-section weather-tooltip-details">
+            <span>降雨 {{ weatherModel.gamePeriod.rainProbability ?? '—' }}%</span>
+            <span>{{ weatherTemperature }}</span>
+          </div>
+          <div v-if="weatherModel.freshness === 'stale'" class="weather-tooltip-warning">
+            天氣資料可能已過期
+          </div>
+          <div v-else-if="weatherModel.freshness === 'expired'" class="weather-tooltip-warning">
+            天氣資料無法更新
+          </div>
+        </div>
+      </span>
+
       <!-- Cheerleader -->
       <span v-if="hasCheerData" class="tooltip-wrapper icon-cheer hide-on-mobile">
         <span class="tooltip-trigger" style="display: inline-flex; align-items: center; justify-content: center; color: var(--accent-coral);">
@@ -107,7 +121,11 @@ import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 import { getFriendsBoughtList } from '../utils/groupMarks.js';
-import { getGameWeather } from '../utils/weather.js';
+import {
+  formatWeatherTemperature,
+  getGameWeather,
+  getWeatherIconUrl,
+} from '../utils/weather.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -130,6 +148,8 @@ const awayTeam = computed(() => TEAMS[props.game.awayTeam] || { name: props.game
 const markData = computed(() => props.userMarks?.[props.game.gameId]);
 const cheers = computed(() => props.cheerleaderData?.[props.game.gameId]);
 const weatherModel = computed(() => getGameWeather(props.game, props.weatherData));
+const weatherIconUrl = computed(() => getWeatherIconUrl(weatherModel.value?.gamePeriod));
+const weatherTemperature = computed(() => formatWeatherTemperature(weatherModel.value?.gamePeriod));
 
 const hasCheerData = computed(() => {
   return cheers.value && (cheers.value.homeMembers?.length > 0 || cheers.value.awayMembers?.length > 0);
@@ -165,37 +185,39 @@ const friendsBoughtList = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.game-weather {
-  display: flex;
-  gap: 6px;
+.weather-icon-trigger {
+  display: inline-flex;
   align-items: center;
-  max-width: 100%;
-  margin-top: 5px;
-  padding: 2px 7px;
-  overflow: hidden;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--bg-card) 75%, #77bff2);
-  color: var(--text-secondary);
-  font-size: 0.65rem;
-  font-weight: 700;
-  white-space: nowrap;
-
-  span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  justify-content: center;
 }
 
-.game-weather-stale,
-.game-weather-expired {
+.weather-icon-image {
+  display: block;
+  width: 30px;
+  height: 30px;
+}
+
+.icon-weather-stale .weather-icon-image,
+.icon-weather-expired .weather-icon-image {
+  filter: saturate(0.7);
+}
+
+.weather-tooltip-details {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.weather-tooltip-warning {
+  margin-top: 4px;
   color: var(--accent-coral);
+  font-size: 0.75rem;
 }
 
 @media (max-width: 768px) {
-  .game-weather {
-    flex-wrap: wrap;
-    justify-content: center;
-    white-space: normal;
+  .weather-tooltip-card {
+    display: none;
   }
 }
 </style>

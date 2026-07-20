@@ -12,9 +12,12 @@ CWA API Key 已取得，可由 GitHub Actions 定期同步未來七天有賽事�
 - 新增 GitHub Actions 定時與手動天氣同步流程，只查詢未來七個臺北日曆日內有賽事的不重複球場。
 - 將 CWA F-D0047 回應正規化並整批驗證，再原子更新 Firebase
   `/weather` 與 `/lastSync/weather`。
-- 相同 `sourceIssuedAt` 不重寫完整快照；同步或驗證失敗時保留上一版有效資料。
+- 相同 `sourceIssuedAt` 預設不重寫完整快照，但支援維護者以 `--force`
+  強制發布已驗證的新格式；同步或驗證失敗時保留上一版有效資料。
 - 新增公開唯讀的 Firebase `/weather` 規則與前端讀取函式。
-- 在賽程卡片與賽事詳情顯示比賽時段天氣、最大降雨機率、發布／同步時間及過期狀態；天氣不可用時不影響賽程。
+- 在賽程卡片以最接近開賽時間的單一預報顯示 CWA 夜間天氣圖示，desktop
+  hover tooltip 顯示天氣簡述、降雨機率與氣溫；賽事詳情保留完整時段、
+  發布／同步時間及過期狀態，天氣不可用時不影響賽程。
 
 ## Capabilities
 
