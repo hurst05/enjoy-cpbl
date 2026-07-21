@@ -45,7 +45,7 @@
         <div v-if="weatherModel" class="modal-section weather-section">
           <div class="modal-section-title weather-section-title">
             <span class="weather-title-symbol">☀️</span>
-            <span>球場天氣</span>
+            <span style="flex: 1;">球場天氣</span>
             <a
               :href="cwaBallparkUrl"
               target="_blank"
@@ -60,7 +60,8 @@
                 :alt="weatherModel.gamePeriod.weather"
                 class="weather-title-icon"
               />
-              <span v-else aria-hidden="true">🌦️</span>
+              <span v-else class="weather-title-icon-fallback" aria-hidden="true">🌦️</span>
+              <span class="weather-link-hint">氣象署 ↗</span>
             </a>
           </div>
           <p v-if="weatherModel.freshness === 'stale'" class="weather-warning">
@@ -417,21 +418,30 @@ const toggleTicketPurchased = () => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    color: inherit;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
     text-decoration: none;
-    transition: background-color 0.2s, transform 0.2s;
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 
     &:hover {
-      background: var(--bg-hover);
+      background: var(--bg-card);
       transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      color: var(--text-primary);
     }
 
     &:focus-visible {
       outline: 2px solid var(--accent-coral);
       outline-offset: 2px;
+    }
+
+    .weather-link-hint {
+      font-size: 0.75rem;
+      font-weight: bold;
+      opacity: 0.9;
     }
   }
 
