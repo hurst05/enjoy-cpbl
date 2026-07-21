@@ -319,7 +319,12 @@ function closeGameModal() {
 }
 
 async function onMarkGame(payload) {
-  await handleMark(currentUser.value, payload);
+  try {
+    await handleMark(currentUser.value, payload);
+    payload.done?.();
+  } catch (error) {
+    payload.done?.(error);
+  }
 }
 
 async function onGoogleSetupComplete() {

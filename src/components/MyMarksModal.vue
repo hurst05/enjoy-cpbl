@@ -114,6 +114,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
+import { hasTicketPurchased } from '../utils/groupMarks.js';
 import SvgIcon from './SvgIcon.vue';
 
 const props = defineProps({
@@ -157,14 +158,15 @@ const aggregatedMarks = computed(() => {
   const addMark = (uid, name, marksObj) => {
     for (const gameId in marksObj) {
       const m = marksObj[gameId];
-      if (m.wantToWatch || m.ticketPurchased) {
+      const ticketPurchased = hasTicketPurchased(m);
+      if (m.wantToWatch || ticketPurchased) {
         const game = props.scheduleData[gameId];
         if (game && game.date && game.date.startsWith(currentYear.toString())) {
           if (!result[gameId]) {
             result[gameId] = { game, members: [], highestWeight: 0 };
           }
-          result[gameId].members.push({ uid, name, wantToWatch: m.wantToWatch, ticketPurchased: m.ticketPurchased });
-          const weight = m.ticketPurchased ? 2 : (m.wantToWatch ? 1 : 0);
+          result[gameId].members.push({ uid, name, wantToWatch: m.wantToWatch, ticketPurchased });
+          const weight = ticketPurchased ? 2 : (m.wantToWatch ? 1 : 0);
           if (weight > result[gameId].highestWeight) {
             result[gameId].highestWeight = weight;
           }
@@ -351,23 +353,25 @@ function exportToCSV() {
     
     let markStr = '';
     if (props.userMarks && props.userMarks[gameId]) {
-      if (props.userMarks[gameId].ticketPurchased) markStr = '✅已買票';
+      if (hasTicketPurchased(props.userMarks[gameId])) markStr = '✅已買票';
       else if (props.userMarks[gameId].wantToWatch) markStr = '❤️想看';
     }
     
     const allMembers = [];
     if (props.userMarks && props.userMarks[gameId]) {
       const m = props.userMarks[gameId];
-      if (m.wantToWatch || m.ticketPurchased) {
-        allMembers.push(`自己(${m.ticketPurchased ? '✅' : '❤️'})`);
+      const ticketPurchased = hasTicketPurchased(m);
+      if (m.wantToWatch || ticketPurchased) {
+        allMembers.push(`自己(${ticketPurchased ? '✅' : '❤️'})`);
       }
     }
     
     if (props.groupMarks) {
       for (const uid in props.groupMarks) {
         const gm = props.groupMarks[uid].marks && props.groupMarks[uid].marks[gameId];
-        if (gm && (gm.wantToWatch || gm.ticketPurchased)) {
-          allMembers.push(`${props.groupMarks[uid].displayName}(${gm.ticketPurchased ? '✅' : '❤️'})`);
+        const ticketPurchased = hasTicketPurchased(gm);
+        if (gm && (gm.wantToWatch || ticketPurchased)) {
+          allMembers.push(`${props.groupMarks[uid].displayName}(${ticketPurchased ? '✅' : '❤️'})`);
         }
       }
     }

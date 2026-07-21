@@ -1,5 +1,10 @@
 import { ref } from 'vue';
-import { getUserMarks, getGroupMarks, setUserMark } from '../firebase.js';
+import {
+  getUserMarks,
+  getGroupMarks,
+  setGroupTicketPurchased,
+  setUserMark,
+} from '../firebase.js';
 
 export function useMarks() {
   const userMarks = ref({});
@@ -40,9 +45,35 @@ export function useMarks() {
     }
   }
 
-  async function handleMark(user, { gameId, markType, value }) {
+  async function handleMark(user, { gameId, markType, value, targetUid, groupId }) {
     if (!user) return;
     try {
+      if (targetUid && targetUid !== user.uid) {
+        const target = groupMarks.value[targetUid];
+        if (!target || (value && !target.groupIds?.includes(groupId))) {
+          throw new Error('找不到共同群組');
+        }
+
+        await setGroupTicketPurchased(
+          targetUid,
+          gameId,
+          user.uid,
+          value ? groupId : null,
+        );
+
+        if (value) {
+          target.marks[gameId] ||= {};
+          target.marks[gameId].ticketPurchasedBy ||= {};
+          target.marks[gameId].ticketPurchasedBy[user.uid] = groupId;
+        } else if (target.marks[gameId]?.ticketPurchasedBy) {
+          delete target.marks[gameId].ticketPurchasedBy[user.uid];
+          if (Object.keys(target.marks[gameId].ticketPurchasedBy).length === 0) {
+            delete target.marks[gameId].ticketPurchasedBy;
+          }
+        }
+        return;
+      }
+
       await setUserMark(user.uid, gameId, markType, value);
       if (!userMarks.value[gameId]) {
         userMarks.value[gameId] = {};
@@ -50,6 +81,7 @@ export function useMarks() {
       userMarks.value[gameId][markType] = value;
     } catch (e) {
       console.error('標記失敗:', e);
+      throw e;
     }
   }
 

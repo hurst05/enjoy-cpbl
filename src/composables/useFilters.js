@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
+import { hasTicketPurchased } from '../utils/groupMarks.js';
 
 export function useFilters(scheduleData, cheerleaderData, userMarks, groupMarks) {
   const filters = ref({
@@ -108,14 +109,14 @@ export function useFilters(scheduleData, cheerleaderData, userMarks, groupMarks)
       const userMark = userMarks.value?.[gameId];
       
       if (filters.value.marks.includes('wantToWatch') && userMark?.wantToWatch) markMatched = true;
-      if (filters.value.marks.includes('ticketPurchased') && userMark?.ticketPurchased) markMatched = true;
+      if (filters.value.marks.includes('ticketPurchased') && hasTicketPurchased(userMark)) markMatched = true;
       
       if (!markMatched && (filters.value.marks.includes('groupWantToWatch') || filters.value.marks.includes('groupTicketPurchased'))) {
         if (groupMarks.value) {
           for (const [uid, userData] of Object.entries(groupMarks.value)) {
             const gMark = userData.marks?.[gameId];
             if (filters.value.marks.includes('groupWantToWatch') && gMark?.wantToWatch) markMatched = true;
-            if (filters.value.marks.includes('groupTicketPurchased') && gMark?.ticketPurchased) markMatched = true;
+            if (filters.value.marks.includes('groupTicketPurchased') && hasTicketPurchased(gMark)) markMatched = true;
             if (markMatched) break;
           }
         }

@@ -177,6 +177,38 @@
                 {{ ticketPurchased ? '✅ 已購票' : '🎟️ 標記已購票' }}
               </button>
             </div>
+
+            <div v-if="groupMembers.length > 0" class="group-ticket-purchase">
+              <button
+                type="button"
+                class="btn-mark btn-group-ticket"
+                :aria-expanded="showGroupTicketMembers"
+                @click="showGroupTicketMembers = !showGroupTicketMembers"
+              >
+                🎟️ 替群友標記
+              </button>
+              <div v-if="showGroupTicketMembers" class="group-ticket-members">
+                <label
+                  v-for="member in groupMembers"
+                  :key="member.uid"
+                  class="group-ticket-member"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isTicketPurchasedByMe(member.userData)"
+                    :disabled="isGroupTicketPending(member.uid)"
+                    @change="toggleGroupTicket(member, $event.target.checked)"
+                  />
+                  <span>{{ member.userData.displayName || member.uid }}</span>
+                  <small v-if="hasTicketPurchased(member.userData.marks?.[game.gameId])">
+                    已有票
+                  </small>
+                  <small v-if="isGroupTicketPending(member.uid)" aria-live="polite">
+                    儲存中…
+                  </small>
+                </label>
+              </div>
+            </div>
           </template>
           <div class="modal-login-hint" style="margin-top: 12px;" v-else>
             💡 登入後可標記「想看」或「已購票」
@@ -212,6 +244,7 @@ import { ref, computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getCwaBallparkUrl } from '../data/ballparks.js';
 import { updateThemeDay } from '../firebase.js';
+import { getFriendsBoughtList, hasTicketPurchased } from '../utils/groupMarks.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 import {
   formatWeatherDateTime,
@@ -247,6 +280,8 @@ const handleOverlayClick = () => {
 
 const isEditingTheme = ref(false);
 const editThemeText = ref('');
+const showGroupTicketMembers = ref(false);
+const pendingGroupTickets = ref(new Set());
 
 const startEditTheme = () => {
   editThemeText.value = props.game.themeDay || '';
@@ -374,28 +409,55 @@ const getTicketGcalUrl = (rule) => {
 const marks = computed(() => props.userMarks?.[props.game.gameId] || {});
 const wantToWatch = computed(() => marks.value.wantToWatch);
 const ticketPurchased = computed(() => marks.value.ticketPurchased);
+const groupMembers = computed(() => Object.entries(props.groupMarks || {})
+  .filter(([uid]) => uid !== props.currentUser?.uid)
+  .map(([uid, userData]) => ({ uid, userData })));
 
 const wantList = computed(() => {
   if (!props.groupMarks) return [];
   const list = [];
   Object.entries(props.groupMarks).forEach(([uid, userData]) => {
-    if (userData.marks?.[props.game.gameId]?.wantToWatch) {
+    if (uid !== props.currentUser?.uid && userData.marks?.[props.game.gameId]?.wantToWatch) {
       list.push(userData.displayName || uid);
     }
   });
   return list;
 });
 
-const boughtList = computed(() => {
-  if (!props.groupMarks) return [];
-  const list = [];
-  Object.entries(props.groupMarks).forEach(([uid, userData]) => {
-    if (userData.marks?.[props.game.gameId]?.ticketPurchased) {
-      list.push(userData.displayName || uid);
-    }
+const boughtList = computed(() => getFriendsBoughtList(
+  props.groupMarks,
+  props.game.gameId,
+  props.currentUser?.uid,
+));
+
+const isTicketPurchasedByMe = (userData) => Boolean(
+  userData.marks?.[props.game.gameId]?.ticketPurchasedBy?.[props.currentUser?.uid],
+);
+
+const isGroupTicketPending = (uid) => pendingGroupTickets.value.has(uid);
+
+const toggleGroupTicket = (member, value) => {
+  const groupId = member.userData.groupIds?.[0];
+  if (!groupId) {
+    alert('找不到共同群組，請重新整理後再試');
+    return;
+  }
+
+  pendingGroupTickets.value = new Set([...pendingGroupTickets.value, member.uid]);
+  emit('mark', {
+    gameId: props.game.gameId,
+    markType: 'ticketPurchased',
+    value,
+    targetUid: member.uid,
+    groupId,
+    done: (error) => {
+      const next = new Set(pendingGroupTickets.value);
+      next.delete(member.uid);
+      pendingGroupTickets.value = next;
+      if (error) alert('標記群友已購票失敗：' + error.message);
+    },
   });
-  return list;
-});
+};
 
 const toggleWantToWatch = () => {
   emit('mark', { gameId: props.game.gameId, markType: 'wantToWatch', value: !wantToWatch.value });
@@ -407,6 +469,42 @@ const toggleTicketPurchased = () => {
 </script>
 
 <style lang="scss" scoped>
+.group-ticket-purchase {
+  margin-bottom: 12px;
+}
+
+.btn-group-ticket {
+  width: 100%;
+}
+
+.group-ticket-members {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.group-ticket-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-hover);
+  cursor: pointer;
+
+  small {
+    margin-left: auto;
+    color: var(--text-secondary);
+  }
+
+  &:has(input:disabled) {
+    cursor: wait;
+    opacity: 0.7;
+  }
+}
+
 .weather-section {
   .weather-section-title {
     display: flex;

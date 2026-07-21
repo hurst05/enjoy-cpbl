@@ -90,7 +90,7 @@
 
       <!-- User Marks -->
       <span v-if="markData?.wantToWatch" class="game-mark-icon mark-want" title="想看">❤️</span>
-      <span v-if="markData?.ticketPurchased" class="game-mark-icon mark-ticket" title="已購票">✅</span>
+      <span v-if="hasTicketPurchased(markData)" class="game-mark-icon mark-ticket" title="已購票">✅</span>
 
       <!-- Friends Want -->
       <span v-if="friendsWantList.length > 0" class="tooltip-wrapper icon-friends-want">
@@ -121,7 +121,7 @@
 import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
-import { getFriendsBoughtList } from '../utils/groupMarks.js';
+import { getFriendsBoughtList, hasTicketPurchased } from '../utils/groupMarks.js';
 import {
   formatWeatherTemperature,
   getGameWeather,

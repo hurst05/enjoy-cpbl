@@ -8,6 +8,16 @@
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
+        "marks": {
+          "$gameId": {
+            "ticketPurchasedBy": {
+              "$buyerUid": {
+                ".write": "auth != null && auth.uid === $buyerUid && (!newData.exists() || (newData.isString() && root.child('groups').child(newData.val()).child('members').child(auth.uid).exists() && root.child('groups').child(newData.val()).child('members').child($uid).exists()))",
+                ".validate": "!newData.exists() || newData.isString()"
+              }
+            }
+          }
+        },
         "isAdmin": {
           ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
         }

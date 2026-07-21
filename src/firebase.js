@@ -137,6 +137,13 @@ export async function setUserMark(uid, gameId, markType, value) {
   await set(ref(db, `users/${uid}/marks/${gameId}/${markType}`), value);
 }
 
+export async function setGroupTicketPurchased(targetUid, gameId, buyerUid, groupId) {
+  await set(
+    ref(db, `users/${targetUid}/marks/${gameId}/ticketPurchasedBy/${buyerUid}`),
+    groupId || null,
+  );
+}
+
 // ===== User Profile =====
 
 export async function getAllUsers() {
@@ -227,8 +234,11 @@ export async function getGroupMarks(groups) {
           result[uid] = {
             displayName: profile.displayName || members[uid],
             marks: profile.marks || {},
+            groupIds: [groupId],
           };
         }
+      } else {
+        result[uid].groupIds.push(groupId);
       }
     }
   }
