@@ -43,6 +43,20 @@ Accept only names confirmed through reviewed Uni-Girls samples:
 - Nozomi
 - 安琪
 - 妍蓁
+- 斐棋
+- Chihiro
+- 文慧真
+- 魚兒
+- 沐沐
+- ELLA
+- 若婷
+- 趙娟週
+- 安惠志
+- 子筑
+- 姿琳
+- 藤本彩花
+- 羽娜
+- 小妤
 
 Treat this list only as a set of verified spellings. Its size does not describe
 how many members should appear in any schedule image. Never compare the number

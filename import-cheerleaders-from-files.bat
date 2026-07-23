@@ -6,7 +6,7 @@ echo ========================================
 echo 正在匯入...
 echo.
 
-call npm run import-cheerleaders
+call npm run import-cheerleaders -- %*
 
 echo.
 pause
