@@ -2,6 +2,8 @@ const CHEERLEADER_NAME_CORRECTIONS = {
   邊荷律: '荷律',
   瑄瑄: '瑄',
   金渡兒: '渡兒',
+  Ella: 'ELLA',
+  姸蓁: '妍蓁',
 };
 
 export function normalizeCheerleaderName(name) {

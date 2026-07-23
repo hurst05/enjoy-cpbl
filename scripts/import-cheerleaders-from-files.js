@@ -7,6 +7,22 @@ const dryRun = process.argv.includes('--dry-run');
 const adminPassword = process.env.ADMIN_PASSWORD || '5566';
 const filenamePattern = /^(\d{4}-\d{2}-\d{2})_(T[1-6])\.json$/;
 
+function getArgValue(flag) {
+  const index = process.argv.indexOf(flag);
+  if (index !== -1 && process.argv[index + 1]) {
+    return process.argv[index + 1];
+  }
+  const prefixArg = process.argv.find(arg => arg.startsWith(`${flag}=`));
+  if (prefixArg) {
+    return prefixArg.slice(flag.length + 1);
+  }
+  return null;
+}
+
+const sinceArg = getArgValue('--since');
+const untilArg = getArgValue('--until');
+const dateArg = getArgValue('--date');
+
 function isValidDate(value) {
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
@@ -55,10 +71,33 @@ function findGame(schedules, { date, homeTeam }) {
 async function run() {
   console.log(`=== 從 JSON ${dryRun ? '檢查' : '匯入'}啦啦隊班表 ===`);
 
-  const filenames = (await readdir(directory))
+  let filenames = (await readdir(directory))
     .filter(filename => filename.toLowerCase().endsWith('.json'))
     .sort();
-  if (filenames.length === 0) throw new Error(`目錄內沒有 JSON：${directory}`);
+
+  if (sinceArg) {
+    filenames = filenames.filter(f => {
+      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+      return match && match[1] >= sinceArg;
+    });
+    console.log(`[過濾條件] 指定起始日期：${sinceArg} (含) 之後`);
+  }
+  if (untilArg) {
+    filenames = filenames.filter(f => {
+      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+      return match && match[1] <= untilArg;
+    });
+    console.log(`[過濾條件] 指定截止日期：${untilArg} (含) 之前`);
+  }
+  if (dateArg) {
+    filenames = filenames.filter(f => {
+      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+      return match && match[1] === dateArg;
+    });
+    console.log(`[過濾條件] 指定特定日期：${dateArg}`);
+  }
+
+  if (filenames.length === 0) throw new Error(`目錄內沒有符合條件的 JSON：${directory}`);
 
   const schedules = await fb.getSchedules();
   if (!schedules) throw new Error('Firebase 中沒有賽程資料，請先同步賽程');
