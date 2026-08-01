@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider, signInWithPopup, linkWithPopup, unlink, updatePassword, updateEmail
 } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
+import { normalizeGameNote } from './utils/gameNotes.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -135,6 +136,12 @@ export async function getUserMarks(uid) {
 
 export async function setUserMark(uid, gameId, markType, value) {
   await set(ref(db, `users/${uid}/marks/${gameId}/${markType}`), value);
+}
+
+export async function setUserGameNote(uid, gameId, note) {
+  const normalizedNote = normalizeGameNote(note);
+  await set(ref(db, `users/${uid}/marks/${gameId}/note`), normalizedNote || null);
+  return normalizedNote;
 }
 
 export async function setGroupTicketPurchased(targetUid, gameId, buyerUid, groupId) {

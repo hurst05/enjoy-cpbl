@@ -142,6 +142,52 @@
           <p class="modal-empty">尚無班表資料</p>
         </div>
 
+        <!-- Saved & Friend Game Notes Section -->
+        <div v-if="currentUser && (savedGameNote || friendGameNotes.length > 0)" class="modal-section game-note-display-section">
+          <div v-if="savedGameNote" class="own-game-note-preview">
+            <div class="friend-game-note-name">已儲存備註</div>
+            <div class="friend-game-note-content">
+              <template
+                v-for="(part, index) in splitNoteContent(savedGameNote)"
+                :key="`own-note-${index}`"
+              >
+                <a
+                  v-if="part.type === 'link'"
+                  :href="part.value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >{{ part.value }}</a>
+                <span v-else>{{ part.value }}</span>
+              </template>
+            </div>
+          </div>
+
+          <div v-if="friendGameNotes.length > 0" class="friend-game-notes">
+            <div class="friend-game-notes-title">群友備註</div>
+            <article
+              v-for="friendNote in friendGameNotes"
+              :key="friendNote.uid"
+              class="friend-game-note"
+            >
+              <div class="friend-game-note-name">{{ friendNote.displayName }}</div>
+              <div class="friend-game-note-content">
+                <template
+                  v-for="(part, index) in splitNoteContent(friendNote.note)"
+                  :key="`${friendNote.uid}-${index}`"
+                >
+                  <a
+                    v-if="part.type === 'link'"
+                    :href="part.value"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >{{ part.value }}</a>
+                  <span v-else>{{ part.value }}</span>
+                </template>
+              </div>
+            </article>
+          </div>
+        </div>
+
         <!-- Ticket Schedule Section -->
         <div class="modal-section" v-if="ticketRulesList.length > 0">
           <div class="modal-section-title">🎟️ 售票時程</div>
@@ -222,6 +268,35 @@
           </div>
         </div>
 
+        <!-- Game Note Input Section -->
+        <div v-if="currentUser" class="modal-section game-notes-section">
+          <div class="modal-section-title">📝 賽事備註</div>
+
+          <label class="game-note-field">
+            <span>我的備註</span>
+            <textarea
+              v-model="noteDraft"
+              class="game-note-textarea"
+              rows="3"
+              maxlength="2000"
+              placeholder="可輸入相簿、集合資訊或網址…"
+              :disabled="isSavingNote"
+            ></textarea>
+          </label>
+          <div class="game-note-actions">
+            <span class="game-note-count">{{ noteDraft.length }} / 2000</span>
+            <button
+              type="button"
+              class="btn-save-note"
+              :disabled="isSavingNote || isNoteUnchanged"
+              @click="saveGameNote"
+            >
+              {{ isSavingNote ? '儲存中…' : '儲存備註' }}
+            </button>
+          </div>
+          <p v-if="noteError" class="game-note-error" role="alert">{{ noteError }}</p>
+        </div>
+
         <!-- Friends Section -->
         <div class="modal-section" v-if="wantList.length > 0 || boughtList.length > 0">
           <div class="modal-section-title">👥 好友狀態</div>
@@ -240,11 +315,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getCwaBallparkUrl } from '../data/ballparks.js';
 import { updateThemeDay } from '../firebase.js';
 import { getFriendsBoughtList, hasTicketPurchased } from '../utils/groupMarks.js';
+import {
+  getFriendGameNotes,
+  normalizeGameNote,
+  splitNoteContent,
+} from '../utils/gameNotes.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 import {
   formatWeatherDateTime,
@@ -270,7 +350,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'mark', 'game-updated']);
+const emit = defineEmits(['close', 'mark', 'save-note', 'game-updated']);
 
 const handleOverlayClick = () => {
   if (window.innerWidth <= 768) {
@@ -282,6 +362,9 @@ const isEditingTheme = ref(false);
 const editThemeText = ref('');
 const showGroupTicketMembers = ref(false);
 const pendingGroupTickets = ref(new Set());
+const noteDraft = ref('');
+const isSavingNote = ref(false);
+const noteError = ref('');
 
 const startEditTheme = () => {
   editThemeText.value = props.game.themeDay || '';
@@ -409,6 +492,13 @@ const getTicketGcalUrl = (rule) => {
 const marks = computed(() => props.userMarks?.[props.game.gameId] || {});
 const wantToWatch = computed(() => marks.value.wantToWatch);
 const ticketPurchased = computed(() => marks.value.ticketPurchased);
+const savedGameNote = computed(() => normalizeGameNote(marks.value.note));
+const isNoteUnchanged = computed(() => normalizeGameNote(noteDraft.value) === savedGameNote.value);
+const friendGameNotes = computed(() => getFriendGameNotes(
+  props.groupMarks,
+  props.game.gameId,
+  props.currentUser?.uid,
+));
 const groupMembers = computed(() => Object.entries(props.groupMarks || {})
   .filter(([uid]) => uid !== props.currentUser?.uid)
   .map(([uid, userData]) => ({ uid, userData })));
@@ -429,6 +519,30 @@ const boughtList = computed(() => getFriendsBoughtList(
   props.game.gameId,
   props.currentUser?.uid,
 ));
+
+watch(savedGameNote, (note) => {
+  if (!isSavingNote.value) noteDraft.value = note;
+}, { immediate: true });
+
+const saveGameNote = () => {
+  if (!props.currentUser || isSavingNote.value) return;
+
+  isSavingNote.value = true;
+  noteError.value = '';
+  emit('save-note', {
+    gameId: props.game.gameId,
+    note: noteDraft.value,
+    done: (error, savedNote) => {
+      isSavingNote.value = false;
+      if (error) {
+        noteError.value = `儲存失敗：${error.message}`;
+        return;
+      }
+
+      noteDraft.value = savedNote || '';
+    },
+  });
+};
 
 const isTicketPurchasedByMe = (userData) => Boolean(
   userData.marks?.[props.game.gameId]?.ticketPurchasedBy?.[props.currentUser?.uid],
@@ -469,6 +583,123 @@ const toggleTicketPurchased = () => {
 </script>
 
 <style lang="scss" scoped>
+.game-note-field {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.game-note-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 84px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-coral);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+}
+
+.game-note-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.game-note-count {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.btn-save-note {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent-coral);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.game-note-error {
+  margin: 8px 0 0;
+  color: #c62828;
+  font-size: 0.85rem;
+}
+
+.game-note-display-section {
+  display: grid;
+  gap: 14px;
+}
+
+.own-game-note-preview {
+  margin-top: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+.friend-game-notes {
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.friend-game-notes-title {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.friend-game-note {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-hover);
+}
+
+.friend-game-note-name {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.friend-game-note-content {
+  color: var(--text-primary);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+
+  a {
+    color: var(--accent-coral);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
 .group-ticket-purchase {
   margin-bottom: 12px;
 }
@@ -601,6 +832,14 @@ const toggleTicketPurchased = () => {
 }
 
 @media (max-width: 768px) {
+  .game-note-actions {
+    justify-content: space-between;
+  }
+
+  .btn-save-note {
+    min-height: 42px;
+  }
+
   .weather-period {
     grid-template-columns: 1fr auto;
     gap: 4px 8px;

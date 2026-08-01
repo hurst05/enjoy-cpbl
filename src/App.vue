@@ -170,6 +170,7 @@
       :highlightCheerMembers="filters.cheerMembers"
       @close="closeGameModal"
       @mark="onMarkGame"
+      @save-note="onSaveGameNote"
       @game-updated="loadScheduleData"
     />
 
@@ -244,7 +245,14 @@ import { useMarks } from './composables/useMarks';
 import { useFilters } from './composables/useFilters';
 
 // 1. 初始化資料載入 (Marks & Groups)
-const { userMarks, groupMarks, loadUserMarksData, loadGroupData, handleMark } = useMarks();
+const {
+  userMarks,
+  groupMarks,
+  loadUserMarksData,
+  loadGroupData,
+  handleMark,
+  handleSaveGameNote,
+} = useMarks();
 
 // 2. 初始化認證
 const { currentUser, userProfile, isAdmin, isGoogleLinked, initAuth, handleLogout, handleLinkGoogle, handleUnlinkGoogle, loadUserData } = useAuth(loadUserMarksData);
@@ -322,6 +330,15 @@ async function onMarkGame(payload) {
   try {
     await handleMark(currentUser.value, payload);
     payload.done?.();
+  } catch (error) {
+    payload.done?.(error);
+  }
+}
+
+async function onSaveGameNote(payload) {
+  try {
+    const note = await handleSaveGameNote(currentUser.value, payload);
+    payload.done?.(null, note);
   } catch (error) {
     payload.done?.(error);
   }

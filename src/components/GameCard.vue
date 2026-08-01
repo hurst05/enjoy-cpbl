@@ -57,7 +57,7 @@
 
     <div class="game-icons">
       <!-- Cheerleader -->
-      <span v-if="hasCheerData" class="tooltip-wrapper icon-cheer hide-on-mobile">
+      <span v-if="hasCheerData" class="tooltip-wrapper icon-cheer hide-on-mobile" :class="{ 'icon-cheer-has-notes': hasGameNotes }">
         <span class="tooltip-trigger" style="display: inline-flex; align-items: center; justify-content: center; color: var(--accent-coral);">
           <SvgIcon name="cheer" size="1.4em" style="--svg-icon-fill: var(--card-bg)" />
         </span>
@@ -116,6 +116,7 @@ import { computed } from 'vue';
 import { TEAMS } from '../data/defaultTeams.js';
 import { getRestSeatDisplay, isRestSeatGame } from '../utils/restSeat.js';
 import { getFriendsBoughtList, hasTicketPurchased } from '../utils/groupMarks.js';
+import { hasAnyGameNote } from '../utils/gameNotes.js';
 import {
   formatWeatherTemperature,
   getGameWeather,
@@ -160,6 +161,13 @@ const hasCheerData = computed(() => {
   return cheers.value && (cheers.value.homeMembers?.length > 0 || cheers.value.awayMembers?.length > 0);
 });
 
+const hasGameNotes = computed(() => hasAnyGameNote(
+  props.userMarks,
+  props.groupMarks,
+  props.game.gameId,
+  props.currentUser?.uid,
+));
+
 const restSeatDisplay = computed(() => {
   if (!isRestSeatGame(props.game)) return null;
 
@@ -193,6 +201,39 @@ const friendsBoughtList = computed(() => {
 /* Allow game-matchup to let tooltips float freely outside without clipping */
 .game-matchup {
   overflow: visible;
+}
+
+.icon-cheer-has-notes :deep(.svg-icon) {
+  animation: cheer-note-colors 2.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-cheer-has-notes :deep(.svg-icon) {
+    animation: none;
+  }
+}
+
+@keyframes cheer-note-colors {
+  0%, 100% {
+    color: #ffd700;
+    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.7));
+  }
+  20% {
+    color: #ff8c00;
+    filter: drop-shadow(0 0 3px rgba(255, 140, 0, 0.7));
+  }
+  40% {
+    color: #ff0080;
+    filter: drop-shadow(0 0 3px rgba(255, 0, 128, 0.7));
+  }
+  60% {
+    color: #aa00ff;
+    filter: drop-shadow(0 0 3px rgba(170, 0, 255, 0.7));
+  }
+  80% {
+    color: #00b7ff;
+    filter: drop-shadow(0 0 3px rgba(0, 183, 255, 0.7));
+  }
 }
 
 /* Location Weather Tooltip Wrapper */

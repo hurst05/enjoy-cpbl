@@ -3,6 +3,7 @@ import {
   getUserMarks,
   getGroupMarks,
   setGroupTicketPurchased,
+  setUserGameNote,
   setUserMark,
 } from '../firebase.js';
 
@@ -85,11 +86,32 @@ export function useMarks() {
     }
   }
 
+  async function handleSaveGameNote(user, { gameId, note }) {
+    if (!user) throw new Error('請先登入');
+
+    try {
+      const normalizedNote = await setUserGameNote(user.uid, gameId, note);
+      userMarks.value[gameId] ||= {};
+
+      if (normalizedNote) {
+        userMarks.value[gameId].note = normalizedNote;
+      } else {
+        delete userMarks.value[gameId].note;
+      }
+
+      return normalizedNote;
+    } catch (e) {
+      console.error('儲存備註失敗:', e);
+      throw e;
+    }
+  }
+
   return {
     userMarks,
     groupMarks,
     loadUserMarksData,
     loadGroupData,
-    handleMark
+    handleMark,
+    handleSaveGameNote,
   };
 }
