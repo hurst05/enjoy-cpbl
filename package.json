@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port=5501 --strictPort",
     "build": "vite build",
     "preview": "vite preview",
     "sync-schedules": "node scripts/sync-schedules.js",
