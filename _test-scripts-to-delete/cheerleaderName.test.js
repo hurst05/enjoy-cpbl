@@ -20,6 +20,11 @@ test('applies manual cheerleader display-name corrections', () => {
   assert.equal(normalizeCheerleaderName('邊荷律'), '荷律');
   assert.equal(normalizeCheerleaderName('瑄瑄'), '瑄');
   assert.equal(normalizeCheerleaderName('金渡兒'), '渡兒');
+  assert.equal(normalizeCheerleaderName('Ella'), 'ELLA');
+  assert.equal(normalizeCheerleaderName('姸蓁'), '妍蓁');
+  assert.equal(normalizeCheerleaderName('妡蔆'), '妡0');
+  assert.equal(normalizeCheerleaderName('Nina'), 'NINA');
+  assert.equal(normalizeCheerleaderName('陳怡婷'), 'ET');
 });
 
 test('normalizes home and away member arrays while preserving other fields', () => {

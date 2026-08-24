@@ -30,9 +30,10 @@ local JSON exports; never read from or write to Firebase.
 6. Inspect every supplied image at original detail when possible. Verify the
    team brand, extract the schedule dates, and transcribe member labels using
    the selected reference. Read labels; do not identify people from faces.
-7. Apply every validation rule below. When a readable label is absent from the
-   selected profile's verified-name allowlist, ask the user to confirm its
-   exact spelling. After confirmation, add it to that allowlist before
+7. Apply every validation rule below. Apply any name normalization and alias
+   mappings defined in the selected reference. When a readable label is absent
+   from the selected profile's verified-name allowlist, ask the user to confirm
+   its exact spelling. After confirmation, add it to that allowlist before
    producing JSON. If a profile requires a target date or year that is absent
    from the artwork, ask for it; never derive it from filenames, directory
    names, post timestamps, or filesystem metadata. For any other failed rule,

@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import * as fb from '../src/firebase.js';
+import { normalizeCheerleaderName } from './cheerleaderName.js';
 
 const defaultDirectory = path.resolve('doc/exportCheerSchedule');
 const dryRun = process.argv.includes('--dry-run');
@@ -57,7 +58,7 @@ function validateFile(filename, data) {
   return {
     date: data.date,
     homeTeam: data.homeTeam,
-    homeMembers: data.homeMembers.map(member => member.trim()),
+    homeMembers: data.homeMembers.map(member => normalizeCheerleaderName(member.trim())),
   };
 }
 

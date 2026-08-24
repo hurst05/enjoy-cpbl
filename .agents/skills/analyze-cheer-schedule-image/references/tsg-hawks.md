@@ -75,6 +75,15 @@ Treat this list only as a spelling-validation set. Its size does not determine
 attendance for any date. When a new or unclear label appears, ask the user for
 the exact spelling, add the confirmed spelling here, and only then export JSON.
 
+## Name Normalization and Aliases
+
+When transcribing or encountering these variations, always normalize them to
+the canonical form:
+
+- `妡蔆` -> `妡0`
+- `Nina` -> `NINA`
+- `陳怡婷` -> `ET`
+
 ## Reviewed Sample Shape
 
 The reviewed July matrix consists of four slides, seven member columns per
