@@ -1,8 +1,8 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import * as fb from '../src/firebase.js';
 
-const directory = path.resolve('doc/exportCheerSchedule');
+const defaultDirectory = path.resolve('doc/exportCheerSchedule');
 const dryRun = process.argv.includes('--dry-run');
 const adminPassword = process.env.ADMIN_PASSWORD || '5566';
 const filenamePattern = /^(\d{4}-\d{2}-\d{2})_(T[1-6])\.json$/;
@@ -22,6 +22,18 @@ function getArgValue(flag) {
 const sinceArg = getArgValue('--since');
 const untilArg = getArgValue('--until');
 const dateArg = getArgValue('--date');
+const monthArg = getArgValue('--month');
+const dirArg = getArgValue('--dir');
+
+// 支援拖曳路徑或位置參數 (排除 flags 的值)
+const flagsWithValues = new Set(['--since', '--until', '--date', '--month', '--dir']);
+const positionalArgs = process.argv.slice(2).filter((arg, i, arr) => {
+  if (arg.startsWith('-')) return false;
+  const prev = arr[i - 1];
+  if (prev && flagsWithValues.has(prev)) return false;
+  return true;
+});
+const positionalArg = positionalArgs[0];
 
 function isValidDate(value) {
   const date = new Date(`${value}T00:00:00Z`);
@@ -68,36 +80,99 @@ function findGame(schedules, { date, homeTeam }) {
   throw new Error('找不到對應賽事');
 }
 
+async function collectFiles(targetPath) {
+  const fileList = [];
+
+  async function scan(currentPath) {
+    const fileStats = await stat(currentPath);
+    if (fileStats.isFile()) {
+      if (currentPath.toLowerCase().endsWith('.json')) {
+        fileList.push({
+          fullPath: currentPath,
+          filename: path.basename(currentPath),
+        });
+      }
+      return;
+    }
+
+    const entries = await readdir(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        await scan(full);
+      } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.json')) {
+        fileList.push({
+          fullPath: full,
+          filename: entry.name,
+        });
+      }
+    }
+  }
+
+  await scan(targetPath);
+  return fileList.sort((a, b) => a.filename.localeCompare(b.filename));
+}
+
 async function run() {
   console.log(`=== 從 JSON ${dryRun ? '檢查' : '匯入'}啦啦隊班表 ===`);
 
-  let filenames = (await readdir(directory))
-    .filter(filename => filename.toLowerCase().endsWith('.json'))
-    .sort();
+  let targetDirectory = defaultDirectory;
+  if (dirArg) {
+    targetDirectory = path.resolve(dirArg);
+  } else if (positionalArg) {
+    targetDirectory = path.resolve(positionalArg);
+  } else if (monthArg) {
+    const cleanMonth = monthArg.replace('-', '');
+    const candidateMonthPath = path.resolve(defaultDirectory, cleanMonth);
+    try {
+      await stat(candidateMonthPath);
+      targetDirectory = candidateMonthPath;
+    } catch {
+      targetDirectory = defaultDirectory;
+    }
+  }
 
+  let files = [];
+  try {
+    files = await collectFiles(targetDirectory);
+  } catch (error) {
+    throw new Error(`無法讀取目錄或檔案：${targetDirectory} (${error.message})`);
+  }
+
+  if (monthArg) {
+    const normalizedMonth = monthArg.includes('-') ? monthArg : `${monthArg.slice(0, 4)}-${monthArg.slice(4, 6)}`;
+    files = files.filter(f => {
+      const match = f.filename.match(/^(\d{4}-\d{2})/);
+      return match && match[1] === normalizedMonth;
+    });
+    console.log(`[過濾條件] 指定月份：${normalizedMonth}`);
+  }
   if (sinceArg) {
-    filenames = filenames.filter(f => {
-      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+    files = files.filter(f => {
+      const match = f.filename.match(/^(\d{4}-\d{2}-\d{2})_/);
       return match && match[1] >= sinceArg;
     });
     console.log(`[過濾條件] 指定起始日期：${sinceArg} (含) 之後`);
   }
   if (untilArg) {
-    filenames = filenames.filter(f => {
-      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+    files = files.filter(f => {
+      const match = f.filename.match(/^(\d{4}-\d{2}-\d{2})_/);
       return match && match[1] <= untilArg;
     });
     console.log(`[過濾條件] 指定截止日期：${untilArg} (含) 之前`);
   }
   if (dateArg) {
-    filenames = filenames.filter(f => {
-      const match = f.match(/^(\d{4}-\d{2}-\d{2})_/);
+    files = files.filter(f => {
+      const match = f.filename.match(/^(\d{4}-\d{2}-\d{2})_/);
       return match && match[1] === dateArg;
     });
     console.log(`[過濾條件] 指定特定日期：${dateArg}`);
   }
 
-  if (filenames.length === 0) throw new Error(`目錄內沒有符合條件的 JSON：${directory}`);
+  console.log(`[掃描路徑] ${targetDirectory}`);
+  console.log(`[目標數量] 找到 ${files.length} 個 JSON 檔案\n`);
+
+  if (files.length === 0) throw new Error(`沒有符合條件的 JSON 檔案`);
 
   const schedules = await fb.getSchedules();
   if (!schedules) throw new Error('Firebase 中沒有賽程資料，請先同步賽程');
@@ -105,12 +180,12 @@ async function run() {
   const pending = [];
   const failures = [];
 
-  for (const filename of filenames) {
+  for (const { fullPath, filename } of files) {
     try {
-      const data = JSON.parse(await readFile(path.join(directory, filename), 'utf8'));
+      const data = JSON.parse(await readFile(fullPath, 'utf8'));
       const schedule = validateFile(filename, data);
       const { game, isFallback } = findGame(schedules, schedule);
-      pending.push({ filename, game, schedule, isFallback });
+      pending.push({ filename, fullPath, game, schedule, isFallback });
       console.log(`✓ ${filename} -> ${game.gameId}${isFallback ? '（原訂日期）' : ''}`);
     } catch (error) {
       failures.push({ filename, reason: error.message });
